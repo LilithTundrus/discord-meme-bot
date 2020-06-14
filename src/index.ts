@@ -2,6 +2,7 @@
 'use strict';
 
 // Custom code imports
+import { botToken } from './config';
 
 // Node native imports
 
@@ -12,3 +13,8 @@ import * as Discord from 'discord.js';
 const client = new Discord.Client();
 const prefix = '!!';
 
+client.login(botToken);
+
+client.on('ready', () => {
+    console.log('Connected to Discord...');
+});
