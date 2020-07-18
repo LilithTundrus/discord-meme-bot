@@ -2,8 +2,9 @@
 'use strict';
 
 // Custom code imports
-import { botToken, botPrefix, redditFetchConfig } from './config';
+import { botToken, botPrefix, redditFetchConfig, dbInfo } from './config';
 import RedditFetchClient from './RedditFetchClient';
+import DatabaseMiddleware from './database/DatabaseMiddleware';
 
 
 // Node native imports
@@ -33,16 +34,16 @@ const snoowrapInstance = new snoowrap.default({
 });
 
 let rfc = new RedditFetchClient(snoowrapInstance, parsedRedditData);
+let db = new DatabaseMiddleware(dbInfo.dbHost, dbInfo.dbName, dbInfo.dbUserName, dbInfo.dbPassword);
 
 // Set up the periodic check for new reddit posts here
-setInterval(intervalFunc, 1500);
+// setInterval(intervalFunc, 1500);
 
 client.login(botToken);
 
 client.on('ready', () => {
     console.log('Connected to Discord...');
-
-
+    db.connect();
 });
 
 client.on('message', async message => {
@@ -56,6 +57,11 @@ client.on('message', async message => {
     const args = message.content.slice(prefix.length).trim().split(/ +/g);
     const command = args.shift().toLowerCase();
 
+    if (message.author.id == '103294979455086592') {
+        message.reply('Yeens not allowed');
+        return;
+    }
+
     switch (command) {
         case 'ping':
             // Calculates ping between sending a message and editing it, giving a nice round-trip latency.
@@ -65,10 +71,43 @@ client.on('message', async message => {
             break;
 
         case 'meme':
-        // This is where the meme command will be tested
-        rfc.test().then((result) => {
-            message.reply(result)
-        });
+            // This is where the meme command will be tested
+            // rfc.test().then((result) => {
+            //     let test = rfc.getNewPosts()
+            //     message.reply(result + ' ' + JSON.stringify(test))
+            // });
+
+            if (args.length == 0) {
+                message.reply('Give me a subreddit name with !!meme you stupid slut')
+            } else {
+                rfc.getNewSubredditPostsBySubredditName(args[0]).then((posts) => {
+                    // posts.forEach((entry) => {
+                    //     message.channel.send(entry.url)
+                    // })
+                    message.channel.send(posts[0].url);
+                }).catch((err) => {
+                    message.channel.send(`You fucking idiot, you cased ${err}`);
+                })
+            }
+            break;
+
+        case 'setchat':
+            // This will be where the bot gets the ID of the discord channel to post all of its posts to
+            message.channel.send(message.channel.id);
+            break;
+
+        case 'clearchat':
+            // Clear the chat setting for the given server
+            message.channel.send('AAAAAAAA');
+            break;
+
+        case 'database':
+            // message.channel.send(mesg)
+            db.getAll().then((results) => {
+                message.channel.send(results)
+            })
+            break;
+
     }
 });
 

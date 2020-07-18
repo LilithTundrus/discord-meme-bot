@@ -27,4 +27,14 @@ export default class RedditFetchClient {
             return results[0].url
         })
     }
+
+    getNewPosts() {
+        return this.redditData
+    }
+
+    getNewSubredditPostsBySubredditName(subRedditName) {
+        return this.wrapper.getSubreddit(subRedditName).getNew().then((posts) => {
+            return posts;
+        })
+    }
 }

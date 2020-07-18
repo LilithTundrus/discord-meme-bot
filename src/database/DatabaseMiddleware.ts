@@ -19,6 +19,7 @@ export default class DatabaseMiddleware {
     public dbName;
     private dbUserName;
     private dbPassword;
+    public db;
 
 
     constructor(dbHost, dbName, dbUserName, dbPassword) {
@@ -26,25 +27,41 @@ export default class DatabaseMiddleware {
         this.dbName = dbName;
         this.dbUserName = dbUserName;
         this.dbPassword = dbPassword;
-    }
 
-    connect() {
-        let con = mysql.createConnection({
+        this.db = mysql.createConnection({
             host: this.dbHost,
             user: this.dbUserName,
             password: this.dbPassword,
-            database: this.dbName
+            database: this.dbName,
         });
+    }
 
-        let msg;
+    connect() {
         let pre_query = new Date().getTime();
-        con.connect(function (err) {
+        return this.db.connect(function (err) {
             if (err) throw err;
             let post_query = new Date().getTime();
             let duration = (post_query - pre_query) / 1000;
-            msg = `Connected to DB in ${duration} seconds`;
+            console.log(`Connected to DB in ${duration} seconds`);
         });
-        return msg;
+    }
+
+    getAll() {
+        return new Promise((resolve, reject) => {
+            let pre_query = new Date().getTime();
+            let sql = 'SELECT * FROM femko_db';
+            this.db.query(sql, function (err, result) {
+                let post_query = new Date().getTime();
+                let duration = (post_query - pre_query) / 1000;
+                if (err) throw err;
+                if (result.length < 1) {
+                    return reject('No user info found');
+                } else {
+                    console.log(`Got ALL users in ${duration} seconds.`);
+                    return resolve(result);
+                }
+            });
+        });
     }
 }
 
