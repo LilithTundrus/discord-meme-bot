@@ -49,17 +49,32 @@ export default class DatabaseMiddleware {
     getAll() {
         return new Promise((resolve, reject) => {
             let pre_query = new Date().getTime();
-            let sql = 'SELECT * FROM femko_db';
+            let sql = 'SHOW TABLES';
             this.db.query(sql, function (err, result) {
                 let post_query = new Date().getTime();
                 let duration = (post_query - pre_query) / 1000;
                 if (err) throw err;
-                if (result.length < 1) {
-                    return reject('No user info found');
-                } else {
-                    console.log(`Got ALL users in ${duration} seconds.`);
-                    return resolve(result);
-                }
+                return resolve(result);
+            });
+        });
+    }
+
+    query(sql, args) {
+        return new Promise((resolve, reject) => {
+            this.db.query(sql, args, (err, rows) => {
+                if (err)
+                    return reject(err);
+                return resolve(rows);
+            });
+        });
+    }
+
+    close() {
+        return new Promise((resolve, reject) => {
+            this.db.end(err => {
+                if (err)
+                    return reject(err);
+                resolve();
             });
         });
     }

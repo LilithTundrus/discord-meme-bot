@@ -103,8 +103,12 @@ client.on('message', async message => {
 
         case 'database':
             // message.channel.send(mesg)
-            db.getAll().then((results) => {
-                message.channel.send(results)
+            db.query(args.join(' '), null).then((results) => {
+                console.log(args.join(' '))
+                console.log(results)
+                // message.channel.send(results)
+            }).catch((err) => {
+                message.channel.send(err)
             })
             break;
 
