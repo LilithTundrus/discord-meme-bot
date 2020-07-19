@@ -78,5 +78,26 @@ export default class DatabaseMiddleware {
             });
         });
     }
+
+    registerDiscord() {
+
+    }
+
+    updateDiscordSubreddits() {
+
+    }
+
+    updateDiscordSubredditData() {
+
+    }
+
+    getDiscordDataByDiscordID() {
+
+    }
+
+    updateDiscordChannelID() {
+
+    }
+
 }
 
