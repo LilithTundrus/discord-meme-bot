@@ -14,13 +14,12 @@ import * as mysql from 'mysql';
 // Global declarations
 
 
-export default class DatabaseMiddleware {
+export default class Database {
     public dbHost;
     public dbName;
     private dbUserName;
     private dbPassword;
     public db;
-
 
     constructor(dbHost, dbName, dbUserName, dbPassword) {
         this.dbHost = dbHost;
@@ -96,6 +95,10 @@ export default class DatabaseMiddleware {
     }
 
     updateDiscordChannelID() {
+
+    }
+
+    addSubredditToDiscord() {
 
     }
 

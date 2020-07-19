@@ -4,7 +4,7 @@
 // Custom code imports
 import { botToken, botPrefix, redditFetchConfig, dbInfo } from './config';
 import RedditFetchClient from './RedditFetchClient';
-import DatabaseMiddleware from './database/DatabaseMiddleware';
+import Database from './database/Database';
 
 
 // Node native imports
@@ -34,7 +34,7 @@ const snoowrapInstance = new snoowrap.default({
 });
 
 let rfc = new RedditFetchClient(snoowrapInstance, parsedRedditData);
-let db = new DatabaseMiddleware(dbInfo.dbHost, dbInfo.dbName, dbInfo.dbUserName, dbInfo.dbPassword);
+let db = new Database(dbInfo.dbHost, dbInfo.dbName, dbInfo.dbUserName, dbInfo.dbPassword);
 
 // Set up the periodic check for new reddit posts here
 // setInterval(intervalFunc, 1500);
