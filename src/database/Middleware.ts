@@ -2,3 +2,35 @@
 
 
 // stuff like checkifexists/etc.
+
+export default class Middleware {
+    constructor() {
+
+    }
+
+    checkIfServerExists() {
+
+    }
+
+    setServerChat() {
+
+    }
+
+    clearServerChat() {
+
+    }
+
+    addServerRedditInfo() {
+
+    }
+
+    removeServerRedditInfo() {
+
+    }
+
+    updateServerRedditInfoCache() {
+        // this is where the 'last seen' posts get placed
+    }
+
+
+}
