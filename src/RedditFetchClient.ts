@@ -14,11 +14,9 @@ import * as snoowrap from 'snoowrap';
 
 export default class RedditFetchClient {
     private wrapper: snoowrap;
-    private redditData: any;
 
-    constructor(snoowrapperInstance: snoowrap, redditData: any) {
+    constructor(snoowrapperInstance: snoowrap) {
         this.wrapper = snoowrapperInstance;
-        this.redditData = redditData;
     }
 
     test() {
@@ -26,10 +24,6 @@ export default class RedditFetchClient {
         return this.wrapper.getHot().then((results) => {
             return results[0].url
         })
-    }
-
-    getNewPosts() {
-        return this.redditData
     }
 
     getNewSubredditPostsBySubredditName(subRedditName) {

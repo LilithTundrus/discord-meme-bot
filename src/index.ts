@@ -20,8 +20,8 @@ import * as snoowrap from 'snoowrap';
 // Global declarations
 const client = new Discord.Client();
 const prefix = botPrefix;
-let reddiData = readRedditData();
-let parsedRedditData = parseRedditDataJSONFromString(reddiData);
+// let reddiData = readRedditData();
+// let parsedRedditData = parseRedditDataJSONFromString(reddiData);
 
 
 // Initiate the wrapper for getting reddit content here
@@ -33,7 +33,7 @@ const snoowrapInstance = new snoowrap.default({
     password: redditFetchConfig.password
 });
 
-let rfc = new RedditFetchClient(snoowrapInstance, parsedRedditData);
+let rfc = new RedditFetchClient(snoowrapInstance);
 let db = new Database(dbInfo.dbHost, dbInfo.dbName);
 
 // Set up the periodic check for new reddit posts here
@@ -72,7 +72,7 @@ client.on('message', async message => {
 
         case 'meme':
             // This is where the meme command will be tested
-            
+
             if (args.length == 0) {
                 message.reply('Give me a subreddit name with !!meme you stupid slut')
             } else {
@@ -116,30 +116,30 @@ function intervalFunc() {
     console.log('Interval function reached');
 }
 
-/** Read the config file for the script/project
- * @returns {string}
- */
-function readRedditData(): string {
-    if (fs.existsSync('../redditData.json')) {
-        let rawData = fs.readFileSync('../redditData.json');
-        return rawData.toString();
-    } else {
-        console.log('Error: Could not find config file (../redditData.json)');
-        // Exit on this error, since the file is needed
-        return process.exit(1);
-    }
-}
+// /** Read the config file for the script/project
+//  * @returns {string}
+//  */
+// function readRedditData(): string {
+//     if (fs.existsSync('../redditData.json')) {
+//         let rawData = fs.readFileSync('../redditData.json');
+//         return rawData.toString();
+//     } else {
+//         console.log('Error: Could not find config file (../redditData.json)');
+//         // Exit on this error, since the file is needed
+//         return process.exit(1);
+//     }
+// }
 
-/** Parse the config JSON from the string from the `readConfigFile()` function
- * @param {string} fileString
- * @returns {object}
- */
-function parseRedditDataJSONFromString(fileString: string) {
-    // Try to parse the contents
-    try {
-        return JSON.parse(fileString);
-    } catch (e) {
-        console.log('Could not parse JSON from given file string');
-        return process.exit(1);
-    }
-}
+// /** Parse the config JSON from the string from the `readConfigFile()` function
+//  * @param {string} fileString
+//  * @returns {object}
+//  */
+// function parseRedditDataJSONFromString(fileString: string) {
+//     // Try to parse the contents
+//     try {
+//         return JSON.parse(fileString);
+//     } catch (e) {
+//         console.log('Could not parse JSON from given file string');
+//         return process.exit(1);
+//     }
+// }
