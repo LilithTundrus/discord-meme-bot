@@ -1,10 +1,27 @@
-// this is where a lot of the bot related stuff will be validated before talking to Database
+// Force ES6 strict mode on compiled JS
+'use strict';
+
+// Custom code imports
+import Database from './Database';
 
 
-// stuff like checkifexists/etc.
+// Node native imports
+
+
+// NPM package imports
+
+
+// Global declarations
+
 
 export default class Middleware {
-    constructor() {
+    private db: Database
+
+    constructor(db: Database) {
+        this.db = db;
+    }
+
+    getAllDiscords() {
 
     }
 
@@ -29,7 +46,7 @@ export default class Middleware {
     }
 
     updateServerRedditInfoCache() {
-        // this is where the 'last seen' posts get placed
+        // This is where the 'last seen' posts get placed
     }
 
 

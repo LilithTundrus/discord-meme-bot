@@ -5,7 +5,7 @@
 import { botToken, botPrefix, redditFetchConfig, dbInfo } from './config';
 import RedditFetchClient from './RedditFetchClient';
 import Database from './database/Database';
-
+import Middleware from './database/Middleware';
 
 // Node native imports
 import * as fs from 'fs';
@@ -33,8 +33,10 @@ const snoowrapInstance = new snoowrap.default({
     password: redditFetchConfig.password
 });
 
-let rfc = new RedditFetchClient(snoowrapInstance);
+// Initialize the database first since other classes need it
 let db = new Database(dbInfo.dbHost, dbInfo.dbName);
+let middleware = new Middleware(db);
+let rfc = new RedditFetchClient(snoowrapInstance, middleware);
 
 // Set up the periodic check for new reddit posts here
 // setInterval(intervalFunc, 1500);
@@ -102,6 +104,7 @@ client.on('message', async message => {
 
         case 'help':
             // Display the help message
+            message.channel.send('There is no help (yet).');
             break;
 
         case 'setchat':

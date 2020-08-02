@@ -3,6 +3,8 @@
 
 // Custom code imports
 import { redditFetchConfig } from './config';
+import Middleware from './database/Middleware';
+
 
 // Node native imports
 
@@ -14,9 +16,11 @@ import * as snoowrap from 'snoowrap';
 
 export default class RedditFetchClient {
     private wrapper: snoowrap;
+    private mw: Middleware;
 
-    constructor(snoowrapperInstance: snoowrap) {
+    constructor(snoowrapperInstance: snoowrap, middleWare: Middleware) {
         this.wrapper = snoowrapperInstance;
+        this.mw = middleWare;
     }
 
     test() {
