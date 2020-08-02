@@ -22,11 +22,15 @@ export default class Middleware {
     }
 
     getAllDiscords() {
-
+        return this.db.getAll();
     }
 
     checkIfServerExists() {
 
+    }
+
+    registerDiscordServer(discordID: string) {
+        return this.db.registerDiscord(discordID);
     }
 
     setServerChat() {
