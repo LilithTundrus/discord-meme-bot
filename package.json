@@ -9,9 +9,11 @@
   "author": "Lilith Tundrus",
   "license": "MIT",
   "dependencies": {
+    "@types/mongodb": "^3.5.25",
     "@types/node": "^14.0.13",
     "@types/snoowrap": "^1.19.0",
     "discord.js": "^12.2.0",
+    "mongodb": "^3.6.0",
     "mysql": "^2.18.1",
     "snoowrap": "^1.21.0"
   }

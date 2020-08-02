@@ -34,7 +34,7 @@ const snoowrapInstance = new snoowrap.default({
 });
 
 let rfc = new RedditFetchClient(snoowrapInstance, parsedRedditData);
-let db = new Database(dbInfo.dbHost, dbInfo.dbName, dbInfo.dbUserName, dbInfo.dbPassword);
+let db = new Database(dbInfo.dbHost, dbInfo.dbName);
 
 // Set up the periodic check for new reddit posts here
 // setInterval(intervalFunc, 1500);
@@ -90,26 +90,27 @@ client.on('message', async message => {
                 })
             }
             break;
-
-        case 'setchat':
-            // This will be where the bot gets the ID of the discord channel to post all of its posts to
-            message.channel.send(message.channel.id);
-            break;
-
         case 'clearchat':
             // Clear the chat setting for the given server
             message.channel.send('AAAAAAAA');
             break;
 
-        case 'database':
-            // message.channel.send(mesg)
-            db.query(args.join(' '), null).then((results) => {
-                console.log(args.join(' '))
-                console.log(results)
-                // message.channel.send(results)
-            }).catch((err) => {
-                message.channel.send(err)
-            })
+        case 'query':
+
+            break;
+
+        case 'register':
+            message.channel.send('Got it, you now have an active discord ID, and can use !!add to subscribe to a subreddit')
+            // here, use the db middleware to ass the discord to the database
+            break;
+
+        case 'help':
+            // Display the help message
+            break;
+
+        case 'setchat':
+            message.channel.send('Ok, this is where I will post my shit');
+
             break;
 
     }
