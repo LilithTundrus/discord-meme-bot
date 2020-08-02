@@ -8,47 +8,38 @@
 
 
 // NPM package imports
-import * as mysql from 'mysql';
 import * as mongo from 'mongodb';
+
+// Global declarations
 let Client = mongo.MongoClient;
 
 
-// Global declarations
-
-
 export default class Database {
+    private dbHost: string
+    private dbName: string;
 
 
 
     constructor(dbHost, dbName) {
-
+        this.dbHost = dbHost;
+        this.dbName = dbName;
     }
 
     connect() {
-        var url = "mongodb://192.168.2.122:27017/memedb";
+        let url = `mongodb://${this.dbHost}:27017/${this.dbName}`;
         Client.connect(url, function (err, db) {
             if (err) throw err;
-            console.log("Database created!");
-            db.close();
         });
+        console.log(`Connected to ${this.dbName}`);
     }
 
     getAll() {
-        // return new Promise((resolve, reject) => {
-        //     let pre_query = new Date().getTime();
-        //     let sql = 'SELECT * FROM discords';
-        //     this.db.query(sql, function (err, result) {
-        //         let post_query = new Date().getTime();
-        //         let duration = (post_query - pre_query) / 1000;
-        //         if (err) throw err;
-        //         return resolve(result);
-        //     });
-        // });
-    }
-
-    query(sql, args) {
 
     }
+
+    // query(sql, args) {
+
+    // }
 
     close() {
         // return new Promise((resolve, reject) => {
@@ -60,35 +51,35 @@ export default class Database {
         // });
     }
 
-    registerDiscord() {
+    registerDiscord(discordID) {
 
     }
 
-    addDiscordSubreddit() {
+    addDiscordSubreddit(discordID) {
 
     }
 
-    removeDiscordSubreddit() {
+    removeDiscordSubreddit(discordID) {
 
     }
 
-    getDiscordSubreddits() {
+    getDiscordSubreddits(discordID) {
 
     }
 
-    getDiscordDataByDiscordID() {
+    getDiscordDataByDiscordID(discordID) {
+        // Returns ALL data for the given discord
+    }
+
+    updateDiscordChannelID(discordID) {
 
     }
 
-    updateDiscordChannelID() {
+    getDiscordSubredditData(discordID) {
 
     }
 
-    getDiscordSubredditData() {
-
-    }
-
-    updateDiscordSubredditData() {
+    updateDiscordSubredditData(discordID) {
 
     }
 

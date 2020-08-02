@@ -72,11 +72,7 @@ client.on('message', async message => {
 
         case 'meme':
             // This is where the meme command will be tested
-            // rfc.test().then((result) => {
-            //     let test = rfc.getNewPosts()
-            //     message.reply(result + ' ' + JSON.stringify(test))
-            // });
-
+            
             if (args.length == 0) {
                 message.reply('Give me a subreddit name with !!meme you stupid slut')
             } else {
