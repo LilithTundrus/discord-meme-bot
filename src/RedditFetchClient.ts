@@ -14,6 +14,9 @@ import Middleware from './database/Middleware';
 import * as snoowrap from 'snoowrap';
 
 
+// Global declarations
+
+
 export default class RedditFetchClient {
     private wrapper: snoowrap;
     private mw: Middleware;

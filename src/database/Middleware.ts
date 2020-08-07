@@ -14,6 +14,7 @@ import Database from './Database';
 // Global declarations
 
 
+// This class is for abstracting the database a bit more from the discord bot
 export default class Middleware {
     private db: Database
 
@@ -30,6 +31,8 @@ export default class Middleware {
     }
 
     registerDiscordServer(discordID: string) {
+        // Check if the server exists before adding it
+        // let test =  this.db.getDiscordSubreddits(discordID);
         return this.db.registerDiscord(discordID);
     }
 
@@ -53,5 +56,8 @@ export default class Middleware {
         // This is where the 'last seen' posts get placed
     }
 
+    dropCollection() {
+
+    }
 
 }

@@ -93,12 +93,9 @@ client.on('message', async message => {
             message.channel.send('AAAAAAAA');
             break;
 
-        case 'query':
-
-            break;
-
         case 'register':
-            message.channel.send('Got it, you now have an active discord ID, and can use !!add to subscribe to a subreddit')
+            middleware.registerDiscordServer(message.guild.id);
+            // message.channel.send('Got it, you now have an active discord ID, and can use !!add to subscribe to a subreddit')
             // here, use the db middleware to ass the discord to the database
             break;
 
@@ -112,10 +109,14 @@ client.on('message', async message => {
 
             break;
 
+        case 'reset':
+            db.dropCollection();
+            break;
     }
 });
 
 function intervalFunc() {
+    // this is where the fetchClient will use the middleware to refresh data/etc.
     console.log('Interval function reached');
 }
 

@@ -23,14 +23,17 @@ export default class Database {
     constructor(dbHost, dbName) {
         this.dbHost = dbHost;
         this.dbName = dbName;
+        // Construct the mongoDB url using the passed arguments
         this.url = `mongodb://${this.dbHost}:27017/${this.dbName}`;
 
+        // Create a mongoDB client to be used withing the class methods
         this.client = new mongo.MongoClient(this.url);
     }
 
+    // This might not actually be needed
     connect() {
-        this.client.connect().then((mc) => {
-            mc.db(this.dbName)
+        return this.client.connect().then((mc) => {
+            mc.db(this.dbName);
             console.log(`First connection to ${this.dbName} successful.`);
         })
 
@@ -46,55 +49,64 @@ export default class Database {
 
     }
 
-    registerDiscord(discordID) {
-        this.client.connect().then((mc) => {
-            let testData = {
-                discordID: "", channelID: ""
+    registerDiscord(discordID: string) {
+        return this.client.connect().then((mc) => {
+            let initialData = {
+                discordID: discordID, channelID: ""
             }
             let dbo = mc.db(this.dbName);
-            dbo.collection('discords').insertOne(testData).then((results) => {
+            dbo.collection('discords').insertOne(initialData).then((results) => {
                 console.log(results)
             })
 
         })
     }
 
-    addDiscordSubreddit(discordID) {
+    addDiscordSubreddit(discordID: string, subRedditName: string) {
 
     }
 
-    removeDiscordSubreddit(discordID) {
+    removeDiscordSubreddit(discordID: string, subRedditName: string) {
 
     }
 
-    getDiscordSubreddits(discordID) {
+    getDiscordSubreddits(discordID: string) {
 
     }
 
-    getDiscordDataByDiscordID(discordID) {
-        // Returns ALL data for the given discord
-    }
 
-    updateDiscordChannelID(discordID) {
+    updateDiscordChannelID(discordID: string, channelID: string) {
 
     }
 
-    getDiscordSubredditData(discordID) {
+    getDiscordSubredditDataByName(discordID: string, subRedditName: string) {
 
     }
 
-    updateDiscordSubredditData(discordID) {
+    updateDiscordSubredditDataByName(discordID: string, subRedditName: string) {
 
     }
+
 
     // One time run functions
 
-    createMainTable() {
-        // Note, Mongo doesn't actually create a table until data is entered into it
+
+    createMainCollection() {
+        // Note: Mongo doesn't actually create a table until data is entered into it
         // So this is just an example
         this.client.connect().then((mc) => {
-            mc.db(this.dbName).createCollection('discords')
+            mc.db(this.dbName).createCollection('discords');
+        });
+    }
+
+    // Only use this for resetting testing data
+    dropCollection() {
+        this.client.connect().then((mc) => {
+            mc.db(this.dbName).dropCollection('discords').then((results) => {
+                console.log(results);
+            })
         })
     }
+
 }
 
