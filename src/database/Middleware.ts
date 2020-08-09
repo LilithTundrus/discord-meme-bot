@@ -32,8 +32,21 @@ export default class Middleware {
 
     registerDiscordServer(discordID: string) {
         // Check if the server exists before adding it
-        // let test =  this.db.getDiscordSubreddits(discordID);
-        return this.db.registerDiscord(discordID);
+        return this.db.checkIfDiscordExists(discordID)
+            .then((results) => {
+                if (results == null) {
+                    // Discord is not already registered
+                    return this.db.registerDiscord(discordID).then((results) => {
+                        return true;
+                    })
+                } else {
+                    // Server is already registered
+                    return false;
+                }
+            }).catch((err) => {
+                console.log(err);
+                return err;
+            })
     }
 
     setServerChat() {

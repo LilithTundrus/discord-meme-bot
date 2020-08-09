@@ -94,7 +94,22 @@ client.on('message', async message => {
             break;
 
         case 'register':
-            middleware.registerDiscordServer(message.guild.id);
+            middleware.registerDiscordServer(message.guild.id).then((results) => {
+                if (results == true) {
+                    // Registration was completed
+                    let msg = 'Got it, you now have an active discord ID, make sure to use the !!setchat command to tell where to post things you add using the !!add command.';
+                    message.channel.send(msg);
+                } else if (results == false) {
+                    // Server is already registered
+
+                    // Let the user know
+                    let msg = 'You are already set up with an active Discord ID. Use the !!setchat command to tell where to post things you add using the !!add command.';
+                    message.channel.send(msg);
+                } else {
+                    // An error was returned
+                    let msg = 'Sorry, something went wrong. Try again later. I will DM the bot admin and let them know something went wrong.';
+                }
+            })
             // message.channel.send('Got it, you now have an active discord ID, and can use !!add to subscribe to a subreddit')
             // here, use the db middleware to ass the discord to the database
             break;
@@ -110,8 +125,13 @@ client.on('message', async message => {
             break;
 
         case 'reset':
+            // Obviously this is only around for testing
             db.dropCollection();
             break;
+
+        case 'add':
+        
+        break;
     }
 });
 

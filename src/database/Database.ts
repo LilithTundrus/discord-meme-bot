@@ -87,6 +87,17 @@ export default class Database {
 
     }
 
+    checkIfDiscordExists(discordID: string) {
+        return this.client.connect().then((mc) => {
+
+            let dbo = mc.db(this.dbName);
+            return dbo.collection('discords').findOne({ discordID: discordID }).then((results) => {
+                return results;
+            })
+
+        })
+    }
+
 
     // One time run functions
 
