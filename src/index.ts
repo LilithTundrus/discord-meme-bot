@@ -2,7 +2,7 @@
 'use strict';
 
 // Custom code imports
-import { botToken, botPrefix, redditFetchConfig, dbInfo } from './config';
+import { botToken, botPrefix, redditFetchConfig, dbInfo, adminID } from './config';
 import RedditFetchClient from './RedditFetchClient';
 import Database from './database/Database';
 import Middleware from './database/Middleware';
@@ -108,10 +108,11 @@ client.on('message', async message => {
                 } else {
                     // An error was returned
                     let msg = 'Sorry, something went wrong. Try again later. I will DM the bot admin and let them know something went wrong.';
+                    message.channel.send(msg);
+                    // This may or may not work
+                    client.user.send(results, { reply: `${adminID}` });
                 }
             })
-            // message.channel.send('Got it, you now have an active discord ID, and can use !!add to subscribe to a subreddit')
-            // here, use the db middleware to ass the discord to the database
             break;
 
         case 'help':
@@ -130,8 +131,12 @@ client.on('message', async message => {
             break;
 
         case 'add':
-        
-        break;
+
+            break;
+
+        case 'admin':
+            client.user.send('FUCK', { reply: adminID });
+            break;
     }
 });
 
@@ -139,31 +144,3 @@ function intervalFunc() {
     // this is where the fetchClient will use the middleware to refresh data/etc.
     console.log('Interval function reached');
 }
-
-// /** Read the config file for the script/project
-//  * @returns {string}
-//  */
-// function readRedditData(): string {
-//     if (fs.existsSync('../redditData.json')) {
-//         let rawData = fs.readFileSync('../redditData.json');
-//         return rawData.toString();
-//     } else {
-//         console.log('Error: Could not find config file (../redditData.json)');
-//         // Exit on this error, since the file is needed
-//         return process.exit(1);
-//     }
-// }
-
-// /** Parse the config JSON from the string from the `readConfigFile()` function
-//  * @param {string} fileString
-//  * @returns {object}
-//  */
-// function parseRedditDataJSONFromString(fileString: string) {
-//     // Try to parse the contents
-//     try {
-//         return JSON.parse(fileString);
-//     } catch (e) {
-//         console.log('Could not parse JSON from given file string');
-//         return process.exit(1);
-//     }
-// }
