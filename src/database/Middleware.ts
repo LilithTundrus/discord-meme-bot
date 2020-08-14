@@ -26,9 +26,10 @@ export default class Middleware {
         return this.db.getAll();
     }
 
-    checkIfServerExists() {
+    // Function registerDiscordServer already handles this
+    // checkIfServerExists() {
 
-    }
+    // }
 
     registerDiscordServer(discordID: string) {
         // Check if the server exists before adding it
@@ -69,8 +70,8 @@ export default class Middleware {
         // This is where the 'last seen' posts get placed
     }
 
-    dropCollection() {
+    // dropCollection() {
 
-    }
+    // }
 
 }

@@ -46,7 +46,14 @@ export default class Database {
     }
 
     getAll() {
-
+        return this.client.connect().then((mc) => {
+            let dbo = mc.db(this.dbName);
+            return dbo.collection('discords').find({}).toArray().then((results) => {
+                return results;
+            }).catch((err) => {
+                console.log(err);
+            })
+        })
     }
 
     registerDiscord(discordID: string) {
@@ -56,9 +63,10 @@ export default class Database {
             }
             let dbo = mc.db(this.dbName);
             dbo.collection('discords').insertOne(initialData).then((results) => {
-                console.log(results)
+                console.log(`Discord registered: ${results}`);
+            }).catch((err) => {
+                console.log(err);
             })
-
         })
     }
 
@@ -73,7 +81,6 @@ export default class Database {
     getDiscordSubreddits(discordID: string) {
 
     }
-
 
     updateDiscordChannelID(discordID: string, channelID: string) {
 
@@ -94,7 +101,6 @@ export default class Database {
             return dbo.collection('discords').findOne({ discordID: discordID }).then((results) => {
                 return results;
             })
-
         })
     }
 
