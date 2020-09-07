@@ -44,7 +44,7 @@ export default class Logger {
 
     // Create the log message based on given inputs
     private constructLogMessage(initialMessage: string, logLevel: string) {
-        initialMessage = `[${new Date().toISOString()}] ${logLevel}: ${initialMessage}`;
+        initialMessage = `[${new Date().toUTCString()}] ${logLevel}: ${initialMessage}`;
         console.log(initialMessage);
         if (this.writeToFile) {
             this.writeToLogFile(initialMessage);

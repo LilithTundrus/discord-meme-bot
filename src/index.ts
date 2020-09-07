@@ -6,6 +6,7 @@ import { botToken, botPrefix, redditFetchConfig, dbInfo, adminID } from './confi
 import RedditFetchClient from './RedditFetchClient';
 import Database from './database/Database';
 import Middleware from './database/Middleware';
+import Logger from './Logger';
 
 // Node native imports
 import * as fs from 'fs';
@@ -31,6 +32,9 @@ const snoowrapInstance = new snoowrap.default({
     password: redditFetchConfig.password,
 });
 
+// Create an instance of the logger class
+let logger = new Logger();
+
 // Initialize the database first since other classes need it
 let db = new Database(dbInfo.dbHost, dbInfo.dbName);
 let middleware = new Middleware(db);
@@ -40,14 +44,16 @@ let rfc = new RedditFetchClient(snoowrapInstance, middleware);
 // setInterval(intervalFunc, 1500);
 
 client.login(botToken);
+logger.info('Attempting to log in to Discord');
 
 client.on('ready', () => {
-    console.log('Connected to Discord...');
+    logger.info('Connected to Discord');
     db.connect();
 });
 
 // TODO: This needs to log every command processed
 client.on('message', async (message) => {
+    logger.info(`Message event from ${message.author.id}: ${message.content}`);
     // It's good practice to ignore other bots. This also ensures the bot ignores itself
     if (message.author.bot) return;
 
@@ -145,5 +151,5 @@ client.on('message', async (message) => {
 
 function intervalFunc() {
     // this is where the fetchClient will use the middleware to refresh data/etc.
-    console.log('Interval function reached');
+    logger.info('Interval function reached');
 }
