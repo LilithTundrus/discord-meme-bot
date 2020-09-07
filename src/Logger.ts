@@ -31,20 +31,21 @@ export default class Logger {
     }
 
     info(logMessage: string) {
-        this.constructLogMessage(logMessage, 'INFO');
+        this.constructLogMessage(logMessage, '\x1b[32mINFO\x1b[0m');
     }
 
     warn(logMessage: string) {
-        this.constructLogMessage(logMessage, 'WARN');
+        this.constructLogMessage(logMessage, '\x1b[33mWARN\x1b[0m');
     }
 
     error(logMessage: string) {
-        this.constructLogMessage(logMessage, 'ERROR');
+        this.constructLogMessage(logMessage, '\x1b[31mERROR\x1b[0m');
     }
 
     // Create the log message based on given inputs
     private constructLogMessage(initialMessage: string, logLevel: string) {
-        initialMessage = `[${Date.now()}] ${logLevel}: ${initialMessage}`;
+        initialMessage = `[${new Date().toISOString()}] ${logLevel}: ${initialMessage}`;
+        console.log(initialMessage);
         if (this.writeToFile) {
             this.writeToLogFile(initialMessage);
         }
