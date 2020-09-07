@@ -10,7 +10,6 @@ import Middleware from './database/Middleware';
 // Node native imports
 import * as fs from 'fs';
 
-
 // NPM package imports
 // Discord.js is an NPM package designed to help with creating Discord bots
 import * as Discord from 'discord.js';
@@ -23,14 +22,13 @@ const prefix = botPrefix;
 // let reddiData = readRedditData();
 // let parsedRedditData = parseRedditDataJSONFromString(reddiData);
 
-
 // Initiate the wrapper for getting reddit content here
 const snoowrapInstance = new snoowrap.default({
     userAgent: redditFetchConfig.userAgent,
     clientId: redditFetchConfig.clientID,
     clientSecret: redditFetchConfig.clientSecret,
     username: redditFetchConfig.userName,
-    password: redditFetchConfig.password
+    password: redditFetchConfig.password,
 });
 
 // Initialize the database first since other classes need it
@@ -48,7 +46,8 @@ client.on('ready', () => {
     db.connect();
 });
 
-client.on('message', async message => {
+// TODO: This needs to log every command processed
+client.on('message', async (message) => {
     // It's good practice to ignore other bots. This also ensures the bot ignores itself
     if (message.author.bot) return;
 
@@ -76,16 +75,18 @@ client.on('message', async message => {
             // This is where the meme command will be tested
 
             if (args.length == 0) {
-                message.reply('Give me a subreddit name with !!meme you stupid slut')
+                message.reply('Give me a subreddit name with !!meme you stupid slut');
             } else {
-                rfc.getNewSubredditPostsBySubredditName(args[0]).then((posts) => {
-                    // posts.forEach((entry) => {
-                    //     message.channel.send(entry.url)
-                    // })
-                    message.channel.send(posts[0].url);
-                }).catch((err) => {
-                    message.channel.send(`You fucking idiot, you cased ${err}`);
-                })
+                rfc.getNewSubredditPostsBySubredditName(args[0])
+                    .then((posts) => {
+                        // posts.forEach((entry) => {
+                        //     message.channel.send(entry.url)
+                        // })
+                        message.channel.send(posts[0].url);
+                    })
+                    .catch((err) => {
+                        message.channel.send(`You fucking idiot, you cased ${err}`);
+                    });
             }
             break;
         case 'clearchat':
@@ -97,22 +98,25 @@ client.on('message', async message => {
             middleware.registerDiscordServer(message.guild.id).then((results) => {
                 if (results == true) {
                     // Registration was completed
-                    let msg = 'Got it, you now have an active discord ID, make sure to use the !!setchat command to tell where to post things you add using the !!add command.';
+                    let msg =
+                        'Got it, you now have an active discord ID, make sure to use the !!setchat command to tell where to post things you add using the !!add command.';
                     message.channel.send(msg);
                 } else if (results == false) {
                     // Server is already registered
 
                     // Let the user know
-                    let msg = 'You are already set up with an active Discord ID. Use the !!setchat command to tell where to post things you add using the !!add command.';
+                    let msg =
+                        'You are already set up with an active Discord ID. Use the !!setchat command to tell where to post things you add using the !!add command.';
                     message.channel.send(msg);
                 } else {
                     // An error was returned
-                    let msg = 'Sorry, something went wrong. Try again later. I will DM the bot admin and let them know something went wrong.';
+                    let msg =
+                        'Sorry, something went wrong. Try again later. I will DM the bot admin and let them know something went wrong.';
                     message.channel.send(msg);
-                    // This may or may not work
+                    // This may or may not work (it doesn't)
                     client.user.send(results, { reply: `${adminID}` });
                 }
-            })
+            });
             break;
 
         case 'help':
@@ -131,7 +135,6 @@ client.on('message', async message => {
             break;
 
         case 'add':
-
             break;
 
         case 'admin':

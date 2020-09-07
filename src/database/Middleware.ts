@@ -4,19 +4,15 @@
 // Custom code imports
 import Database from './Database';
 
-
 // Node native imports
-
 
 // NPM package imports
 
-
 // Global declarations
-
 
 // This class is for abstracting the database a bit more from the discord bot
 export default class Middleware {
-    private db: Database
+    private db: Database;
 
     constructor(db: Database) {
         this.db = db;
@@ -33,38 +29,32 @@ export default class Middleware {
 
     registerDiscordServer(discordID: string) {
         // Check if the server exists before adding it
-        return this.db.checkIfDiscordExists(discordID)
+        return this.db
+            .checkIfDiscordExists(discordID)
             .then((results) => {
                 if (results == null) {
                     // Discord is not already registered
                     return this.db.registerDiscord(discordID).then((results) => {
                         return true;
-                    })
+                    });
                 } else {
                     // Server is already registered
                     return false;
                 }
-            }).catch((err) => {
+            })
+            .catch((err) => {
                 console.log(err);
                 return err;
-            })
+            });
     }
 
-    setServerChat() {
+    setServerChat() {}
 
-    }
+    clearServerChat() {}
 
-    clearServerChat() {
+    addServerRedditInfo() {}
 
-    }
-
-    addServerRedditInfo() {
-
-    }
-
-    removeServerRedditInfo() {
-
-    }
+    removeServerRedditInfo() {}
 
     updateServerRedditInfoCache() {
         // This is where the 'last seen' posts get placed
@@ -73,5 +63,4 @@ export default class Middleware {
     // dropCollection() {
 
     // }
-
 }

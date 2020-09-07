@@ -5,17 +5,13 @@
 import { redditFetchConfig } from './config';
 import Middleware from './database/Middleware';
 
-
 // Node native imports
-
 
 // NPM package imports
 // Reddit API wrapper
 import * as snoowrap from 'snoowrap';
 
-
 // Global declarations
-
 
 export default class RedditFetchClient {
     private wrapper: snoowrap;
@@ -29,13 +25,16 @@ export default class RedditFetchClient {
     test() {
         // Printing a list of the titles on the front page
         return this.wrapper.getHot().then((results) => {
-            return results[0].url
-        })
+            return results[0].url;
+        });
     }
 
     getNewSubredditPostsBySubredditName(subRedditName) {
-        return this.wrapper.getSubreddit(subRedditName).getNew().then((posts) => {
-            return posts;
-        })
+        return this.wrapper
+            .getSubreddit(subRedditName)
+            .getNew()
+            .then((posts) => {
+                return posts;
+            });
     }
 }
