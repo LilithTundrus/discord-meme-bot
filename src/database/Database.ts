@@ -2,6 +2,7 @@
 'use strict';
 
 // Custom code imports
+import Logger from '../Logger';
 
 // Node native imports
 
@@ -9,6 +10,9 @@
 import * as mongo from 'mongodb';
 
 // Global declarations
+
+// Create an instance of the logger class
+let logger = new Logger();
 
 export default class Database {
     private dbHost: string;
@@ -30,7 +34,7 @@ export default class Database {
     connect() {
         return this.client.connect().then((mc) => {
             mc.db(this.dbName);
-            console.log(`First connection to ${this.dbName} successful.`);
+            logger.info(`First connection to ${this.dbName} successful.`);
         });
     }
 
@@ -50,12 +54,13 @@ export default class Database {
                     return results;
                 })
                 .catch((err) => {
-                    console.log(err);
+                    logger.error(err);
                 });
         });
     }
 
     registerDiscord(discordID: string) {
+        logger.info(`Attempting to register discord server with ID ${discordID}`);
         return this.client.connect().then((mc) => {
             let initialData = {
                 discordID: discordID,
@@ -66,10 +71,10 @@ export default class Database {
             dbo.collection('discords')
                 .insertOne(initialData)
                 .then((results) => {
-                    console.log(`Discord registered: ${results}`);
+                    logger.info(`Discord registered: ${results}`);
                 })
                 .catch((err) => {
-                    console.log(err);
+                    logger.error(err);
                 });
         });
     }
@@ -83,12 +88,18 @@ export default class Database {
     getDiscordSubreddits(discordID: string) {}
 
     updateDiscordChannelID(discordID: string, channelID: string) {
+        logger.info(
+            `Attempting to update discord channel for server ${discordID} to channel ${channelID}`
+        );
         return this.client.connect().then((mc) => {
             let dbo = mc.db(this.dbName);
             return dbo
                 .collection('discords')
                 .findOneAndUpdate({ discordID: discordID }, { channelID: channelID })
                 .then((results) => {
+                    logger.info(
+                        `Updated discord ${discordID} channel to ${channelID} successfully`
+                    );
                     return results;
                 });
         });

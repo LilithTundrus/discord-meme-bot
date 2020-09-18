@@ -48,12 +48,12 @@ logger.info('Attempting to log in to Discord');
 
 client.on('ready', () => {
     logger.info('Connected to Discord');
+    // First time connect, mostly just to check if the database is there
     db.connect();
 });
 
 // TODO: This needs to log every command processed
 client.on('message', async (message) => {
-    logger.info(`Message event from ${message.author.id}: ${message.content}`);
     // It's good practice to ignore other bots. This also ensures the bot ignores itself
     if (message.author.bot) return;
 
@@ -64,10 +64,7 @@ client.on('message', async (message) => {
     const args = message.content.slice(prefix.length).trim().split(/ +/g);
     const command = args.shift().toLowerCase();
 
-    if (message.author.id == '103294979455086592') {
-        message.reply('Yeens not allowed');
-        return;
-    }
+    logger.info(`Message event from ${message.author.id}: ${message.content}`);
 
     switch (command) {
         case 'ping':
@@ -132,7 +129,6 @@ client.on('message', async (message) => {
 
         case 'setchat':
             message.channel.send('Ok, this is where I will post my shit');
-
             break;
 
         case 'reset':
@@ -143,8 +139,9 @@ client.on('message', async (message) => {
         case 'add':
             break;
 
+        // Used for testing or maybe like a console menu?
         case 'admin':
-            client.user.send('FUCK', { reply: adminID });
+            (await client.users.fetch(adminID)).send('FUCK')
             break;
     }
 });
