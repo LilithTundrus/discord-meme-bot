@@ -9,7 +9,7 @@ import Middleware from './database/Middleware';
 import Logger from './Logger';
 
 // Node native imports
-import * as fs from 'fs';
+// import * as fs from 'fs';
 
 // NPM package imports
 // Discord.js is an NPM package designed to help with creating Discord bots
@@ -20,8 +20,6 @@ import * as snoowrap from 'snoowrap';
 // Global declarations
 const client = new Discord.Client();
 const prefix = botPrefix;
-// let reddiData = readRedditData();
-// let parsedRedditData = parseRedditDataJSONFromString(reddiData);
 
 // Initiate the wrapper for getting reddit content here
 const snoowrapInstance = new snoowrap.default({
@@ -46,10 +44,29 @@ let rfc = new RedditFetchClient(snoowrapInstance, middleware);
 client.login(botToken);
 logger.info('Attempting to log in to Discord');
 
+const exampleEmbed = new Discord.MessageEmbed()
+    .setColor('#0099ff')
+    .setTitle('Some title')
+    .setURL('https://discord.js.org/')
+    .setAuthor('Some name', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
+    .setDescription('Some description here')
+    .setThumbnail('https://i.imgur.com/wSTFkRM.png')
+    .addFields(
+        { name: 'Regular field title', value: 'Some value here' },
+        { name: '\u200B', value: '\u200B' },
+        { name: 'Inline field title', value: 'Some value here', inline: true },
+        { name: 'Inline field title', value: 'Some value here', inline: true }
+    )
+    .addField('Inline field title', 'Some value here', true)
+    .setImage('https://i.imgur.com/wSTFkRM.png')
+    .setTimestamp()
+    .setFooter('Some footer text here', 'https://i.imgur.com/wSTFkRM.png');
+
 client.on('ready', () => {
     logger.info('Connected to Discord');
     // First time connect, mostly just to check if the database is there
     db.connect();
+    // TODO: Set up a rolling check on the database to make sure connection stays good
 });
 
 // TODO: This needs to log every command processed
@@ -70,7 +87,7 @@ client.on('message', async (message) => {
         case 'ping':
             // Calculates ping between sending a message and editing it, giving a nice round-trip latency.
             // The second ping is an average latency between the bot and the websocket server (one-way, not round-trip)
-            const m: any = await message.channel.send('AAAAAAAA');
+            const m: any = await message.channel.send('Waiting...');
             m.edit(`\nLatency is ${m.createdTimestamp - message.createdTimestamp}ms.`);
             break;
 
@@ -102,14 +119,14 @@ client.on('message', async (message) => {
                 if (results == true) {
                     // Registration was completed
                     let msg =
-                        'Got it, you now have an active discord ID, make sure to use the !!setchat command to tell where to post things you add using the !!add command.';
+                        'Got it, you now have an active discord ID, make sure to use the `!!setchat` command to set where to post things you add using the `!!add` command.';
                     message.channel.send(msg);
                 } else if (results == false) {
                     // Server is already registered
 
                     // Let the user know
                     let msg =
-                        'You are already set up with an active Discord ID. Use the !!setchat command to tell where to post things you add using the !!add command.';
+                        'You are already set up with an active Discord ID. Use the `!!setchat` command to set where to post things you add using the `!!add` command.';
                     message.channel.send(msg);
                 } else {
                     // An error was returned
@@ -124,24 +141,35 @@ client.on('message', async (message) => {
 
         case 'help':
             // Display the help message
-            message.channel.send('There is no help (yet).');
+            message.channel.send(exampleEmbed);
             break;
 
         case 'setchat':
-            message.channel.send('Ok, this is where I will post my shit');
+            // Check if discord server is registered
+            // If it is, send a confirmation, else error out
+            message.channel.send(
+                'Ok, this is where images from subreddits you add with the `!!add` command'
+            );
             break;
 
         case 'reset':
+            message.channel.send(
+                'Resetting the ENTIRE database...'
+            );
             // Obviously this is only around for testing
             db.dropCollection();
             break;
 
         case 'add':
+            // Check if discord server is registered AND a chat selection has been set
+            // If it is, send a confirmation, else error out
+            // Also, make sure the subreddit string is valid
             break;
 
         // Used for testing or maybe like a console menu?
         case 'admin':
-            (await client.users.fetch(adminID)).send('FUCK')
+            // Why does this need to be like this???
+            (await client.users.fetch(adminID)).send('FUCK');
             break;
     }
 });

@@ -121,7 +121,7 @@ export default class Database {
         });
     }
 
-    setUpvoteThreshhold() {}
+    setUpvoteThreshold() {}
 
     // One time run functions
 
