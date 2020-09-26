@@ -18,6 +18,17 @@ export default class Middleware {
         this.db = db;
     }
 
+    // This function might seem useless but the middleware should be the only thing being used
+    connect() {
+        return this.db.connect();
+    }
+
+    // This function might seem useless but the middleware should be the only thing being used
+    dropCollection() {
+        return this.db.dropCollection();
+    }
+
+    // This will be needed for the interval function to iterate through each registered discord
     getAllDiscords() {
         return this.db.getAll();
     }
@@ -50,17 +61,16 @@ export default class Middleware {
 
     setServerChat() {}
 
+    // This is more of an unsubscribe message
     clearServerChat() {}
 
-    addServerRedditInfo() {}
+    addServerRedditInfo() {
+        // Make sure the subreddit is actually valid to add first
+    }
 
     removeServerRedditInfo() {}
 
     updateServerRedditInfoCache() {
         // This is where the 'last seen' posts get placed
     }
-
-    // dropCollection() {
-
-    // }
 }
