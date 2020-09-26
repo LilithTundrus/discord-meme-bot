@@ -25,7 +25,6 @@ export default class Database {
         this.dbName = dbName;
         // Construct the mongoDB url using the passed arguments
         this.url = `mongodb://${this.dbHost}:27017/${this.dbName}`;
-
         // Create a mongoDB client to be used withing the class methods
         this.client = new mongo.MongoClient(this.url);
     }
@@ -44,6 +43,7 @@ export default class Database {
     }
 
     getAll() {
+        logger.info('Database received a request for ALL discords');
         return this.client.connect().then((mc) => {
             let dbo = mc.db(this.dbName);
             return dbo
@@ -60,18 +60,19 @@ export default class Database {
     }
 
     registerDiscord(discordID: string) {
-        logger.info(`Attempting to register discord server with ID ${discordID}`);
+        logger.info(`Database attempting to register discord server with ID ${discordID}`);
         return this.client.connect().then((mc) => {
             let initialData = {
                 discordID: discordID,
                 channelID: '',
                 upvoteThreshold: 50,
+                subReddits: [],
             };
             let dbo = mc.db(this.dbName);
             dbo.collection('discords')
                 .insertOne(initialData)
                 .then((results) => {
-                    logger.info(`Discord registered: ${results}`);
+                    logger.info(`Discord successfully registered: ${results}`);
                 })
                 .catch((err) => {
                     logger.error(err);
@@ -101,6 +102,9 @@ export default class Database {
                         `Updated discord ${discordID} channel to ${channelID} successfully`
                     );
                     return results;
+                })
+                .catch((err) => {
+                    logger.error(err);
                 });
         });
     }
@@ -110,6 +114,7 @@ export default class Database {
     updateDiscordSubredditDataByName(discordID: string, subRedditName: string) {}
 
     checkIfDiscordExists(discordID: string) {
+        logger.info(`Checking for discord  server with ${discordID} in database`);
         return this.client.connect().then((mc) => {
             let dbo = mc.db(this.dbName);
             return dbo
@@ -117,30 +122,41 @@ export default class Database {
                 .findOne({ discordID: discordID })
                 .then((results) => {
                     return results;
+                })
+                .catch((err) => {
+                    logger.error(err);
                 });
         });
     }
 
-    setUpvoteThreshold() {}
+    setUpvoteThreshold(discordID: string, upvoteThreshold: number) {}
 
-    // One time run functions
+    //#region One time run functions
 
     createMainCollection() {
-        // Note: Mongo doesn't actually create a table until data is entered into it
+        // NOTE: Mongo doesn't actually create a table until data is entered into it
         // So this is just an example
         this.client.connect().then((mc) => {
+            logger.debug('Created main database. NOTE THIS DOES NOTHING UNTIL DATA IS ENTERED!!!');
             mc.db(this.dbName).createCollection('discords');
         });
     }
 
     // Only use this for resetting testing data
     dropCollection() {
+        logger.warn('Attempting to drop the main database');
         this.client.connect().then((mc) => {
             mc.db(this.dbName)
                 .dropCollection('discords')
                 .then((results) => {
+                    logger.info('Dropped main table');
                     console.log(results);
+                })
+                .catch((err) => {
+                    logger.error(err);
                 });
         });
     }
 }
+
+//#endregion
