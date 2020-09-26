@@ -35,6 +35,7 @@ let logger = new Logger();
 
 // Initialize the database first since other classes need it
 let db = new Database(dbInfo.dbHost, dbInfo.dbName);
+// Set up the middleware to never have the bot fully in control of the database
 let middleware = new Middleware(db);
 let rfc = new RedditFetchClient(snoowrapInstance, middleware);
 
@@ -65,11 +66,10 @@ const exampleEmbed = new Discord.MessageEmbed()
 client.on('ready', () => {
     logger.info('Connected to Discord');
     // First time connect, mostly just to check if the database is there
-    db.connect();
+    middleware.connect();
     // TODO: Set up a rolling check on the database to make sure connection stays good
 });
 
-// TODO: This needs to log every command processed
 client.on('message', async (message) => {
     // It's good practice to ignore other bots. This also ensures the bot ignores itself
     if (message.author.bot) return;
@@ -122,9 +122,7 @@ client.on('message', async (message) => {
                         'Got it, you now have an active discord ID, make sure to use the `!!setchat` command to set where to post things you add using the `!!add` command.';
                     message.channel.send(msg);
                 } else if (results == false) {
-                    // Server is already registered
-
-                    // Let the user know
+                    // Server is already registered, let the user know
                     let msg =
                         'You are already set up with an active Discord ID. Use the `!!setchat` command to set where to post things you add using the `!!add` command.';
                     message.channel.send(msg);
@@ -146,18 +144,18 @@ client.on('message', async (message) => {
 
         case 'setchat':
             // Check if discord server is registered
+
             // If it is, send a confirmation, else error out
             message.channel.send(
-                'Ok, this is where images from subreddits you add with the `!!add` command'
+                'Ok, this is where images from subreddits you add with the `!!add` command will be posted'
             );
             break;
 
         case 'reset':
-            message.channel.send(
-                'Resetting the ENTIRE database...'
-            );
+            message.channel.send('Resetting the ENTIRE database...');
             // Obviously this is only around for testing
-            db.dropCollection();
+            middleware.dropCollection();
+            message.channel.send('Done.');
             break;
 
         case 'add':
@@ -166,10 +164,14 @@ client.on('message', async (message) => {
             // Also, make sure the subreddit string is valid
             break;
 
+        case 'unsubscribe':
+            // This should be a feature
+            break;
+
         // Used for testing or maybe like a console menu?
         case 'admin':
-            // Why does this need to be like this???
-            (await client.users.fetch(adminID)).send('FUCK');
+            // Why does this need to be like this??? (the wrap around the await)
+            (await client.users.fetch(adminID)).send('Admin test');
             break;
     }
 });
