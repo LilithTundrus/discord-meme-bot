@@ -7,6 +7,7 @@ import RedditFetchClient from './RedditFetchClient';
 import Database from './database/Database';
 import Middleware from './database/Middleware';
 import Logger from './Logger';
+import * as embeds from './embeds';
 
 // Node native imports
 // import * as fs from 'fs';
@@ -45,24 +46,6 @@ let rfc = new RedditFetchClient(snoowrapInstance, middleware);
 client.login(botToken);
 logger.info('Attempting to log in to Discord');
 
-const exampleEmbed = new Discord.MessageEmbed()
-    .setColor('#0099ff')
-    .setTitle('Some title')
-    .setURL('https://discord.js.org/')
-    .setAuthor('Some name', 'https://i.imgur.com/wSTFkRM.png', 'https://discord.js.org')
-    .setDescription('Some description here')
-    .setThumbnail('https://i.imgur.com/wSTFkRM.png')
-    .addFields(
-        { name: 'Regular field title', value: 'Some value here' },
-        { name: '\u200B', value: '\u200B' },
-        { name: 'Inline field title', value: 'Some value here', inline: true },
-        { name: 'Inline field title', value: 'Some value here', inline: true }
-    )
-    .addField('Inline field title', 'Some value here', true)
-    .setImage('https://i.imgur.com/wSTFkRM.png')
-    .setTimestamp()
-    .setFooter('Some footer text here', 'https://i.imgur.com/wSTFkRM.png');
-
 client.on('ready', () => {
     logger.info('Connected to Discord');
     // First time connect, mostly just to check if the database is there
@@ -84,13 +67,6 @@ client.on('message', async (message) => {
     logger.info(`Message event from ${message.author.id}: ${message.content}`);
 
     switch (command) {
-        case 'ping':
-            // Calculates ping between sending a message and editing it, giving a nice round-trip latency.
-            // The second ping is an average latency between the bot and the websocket server (one-way, not round-trip)
-            const m: any = await message.channel.send('Waiting...');
-            m.edit(`\nLatency is ${m.createdTimestamp - message.createdTimestamp}ms.`);
-            break;
-
         case 'meme':
             // This is where the meme command will be tested
 
@@ -111,6 +87,7 @@ client.on('message', async (message) => {
             break;
         case 'clearchat':
             // Clear the chat setting for the given server
+            // First check if the discord server is registered, then blank out the chat field
             message.channel.send('AAAAAAAA');
             break;
 
@@ -139,7 +116,7 @@ client.on('message', async (message) => {
 
         case 'help':
             // Display the help message
-            message.channel.send(exampleEmbed);
+            message.channel.send(embeds.exampleEmbed);
             break;
 
         case 'setchat':
@@ -149,13 +126,6 @@ client.on('message', async (message) => {
             message.channel.send(
                 'Ok, this is where images from subreddits you add with the `!!add` command will be posted'
             );
-            break;
-
-        case 'reset':
-            message.channel.send('Resetting the ENTIRE database...');
-            // Obviously this is only around for testing
-            middleware.dropCollection();
-            message.channel.send('Done.');
             break;
 
         case 'add':
@@ -170,8 +140,20 @@ client.on('message', async (message) => {
 
         // Used for testing or maybe like a console menu?
         case 'admin':
-            // Why does this need to be like this??? (the wrap around the await)
-            (await client.users.fetch(adminID)).send('Admin test');
+            // Check for admin ID
+            if (message.author.id !== adminID) {
+                logger.warn(
+                    `User with ID ${message.author.id} attempted to use the 'admin' command`
+                );
+                return message.reply('Access Denied');
+            } else {
+                logger.debug(`Received authorized 'admin' command with arguments: ${args}`);
+                if (args.length == 0) {
+                    (await client.users.fetch(adminID)).send(embeds.adminEmbed);
+                } else {
+                    return adminCommandParse(args[0]);
+                }
+            }
             break;
     }
 });
@@ -179,4 +161,15 @@ client.on('message', async (message) => {
 function intervalFunc() {
     // this is where the fetchClient will use the middleware to refresh data/etc.
     logger.info('Interval function reached');
+}
+
+// This is for processing admin-type commands to manage the bot from the bot itself
+async function adminCommandParse(arg: string) {
+    if (arg == 'restart') {
+        // Restart the bot
+    } else if (arg == 'reset') {
+        (await client.users.fetch(adminID)).send('Resetting the ENTIRE database...');
+        middleware.dropCollection();
+        (await client.users.fetch(adminID)).send('Done.');
+    }
 }
