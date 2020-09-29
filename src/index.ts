@@ -32,7 +32,7 @@ const snoowrapInstance = new snoowrap.default({
 });
 
 // Create an instance of the logger class
-let logger = new Logger();
+let logger = new Logger('Bot');
 
 // Initialize the database first since other classes need it
 let db = new Database(dbInfo.dbHost, dbInfo.dbName);
@@ -121,11 +121,19 @@ client.on('message', async (message) => {
 
         case 'setchat':
             // Check if discord server is registered
-
+            return middleware.checkRegistration(message.guild.id).then((results) => {
+                if (results == true) {
+                    // Server is registered
+                    message.channel.send(
+                        'Ok, this is where images from subreddits you add with the `!!add` command will be posted'
+                    );
+                    return middleware.setServerChat(message.guild.id, message.channel.id);
+                } else {
+                    // Server needs to register
+                }
+            });
             // If it is, send a confirmation, else error out
-            message.channel.send(
-                'Ok, this is where images from subreddits you add with the `!!add` command will be posted'
-            );
+
             break;
 
         case 'add':
@@ -171,5 +179,13 @@ async function adminCommandParse(arg: string) {
         (await client.users.fetch(adminID)).send('Resetting the ENTIRE database...');
         middleware.dropCollection();
         (await client.users.fetch(adminID)).send('Done.');
+    } else if (arg == 'get') {
+        return middleware.getAllDiscords().then((results) => {
+            console.log(results);
+            client.users.fetch(adminID).then((user) => {
+                user.send(JSON.stringify(results, null, 2));
+            });
+        });
     }
+    // TODO: Add more features here
 }

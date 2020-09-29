@@ -23,6 +23,25 @@ export default class Middleware {
         return this.db.connect();
     }
 
+    checkRegistration(discordID: string) {
+        // Check if the server exists before adding it
+        return this.db
+            .checkIfDiscordExists(discordID)
+            .then((results) => {
+                if (results == null) {
+                    // Discord is not already registered
+                    return false;
+                } else {
+                    // Server is already registered
+                    return true;
+                }
+            })
+            .catch((err) => {
+                console.log(err);
+                return err;
+            });
+    }
+
     // This function might seem useless but the middleware should be the only thing being used
     dropCollection() {
         return this.db.dropCollection();
@@ -59,7 +78,14 @@ export default class Middleware {
             });
     }
 
-    setServerChat() {}
+    setServerChat(discordID: string, channelID: string) {
+        return this.db
+            .updateDiscordChannelID(discordID, channelID)
+            .then((results) => {
+                console.log(results);
+            })
+            .catch((err) => {});
+    }
 
     // This is more of an unsubscribe message
     clearServerChat() {}

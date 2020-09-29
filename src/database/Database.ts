@@ -12,7 +12,7 @@ import * as mongo from 'mongodb';
 // Global declarations
 
 // Create an instance of the logger class
-let logger = new Logger();
+let logger = new Logger('Database');
 
 export default class Database {
     private dbHost: string;
@@ -92,11 +92,12 @@ export default class Database {
         logger.info(
             `Attempting to update discord channel for server ${discordID} to channel ${channelID}`
         );
+        console.log(discordID, channelID);
         return this.client.connect().then((mc) => {
             let dbo = mc.db(this.dbName);
             return dbo
                 .collection('discords')
-                .findOneAndUpdate({ discordID: discordID }, { channelID: channelID })
+                .updateOne({ discordID: discordID }, { $set: { channelID: channelID } })
                 .then((results) => {
                     logger.info(
                         `Updated discord ${discordID} channel to ${channelID} successfully`
