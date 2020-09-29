@@ -16,13 +16,18 @@ import * as fs from 'fs';
 export default class Logger {
     public logPath: string;
     private writeToFile: boolean;
+    private moduleName: string = '';
 
-    constructor(writeToFile?: string, logPath?: string) {
+    constructor(moduleName?: string, writeToFile?: string, logPath?: string) {
         // Don't bother checking the path being fed to this. Yeah blah blah
         // "Don't trust your inputs" but fuck you I'm not making enterprise software
         if (writeToFile && logPath) {
             this.logPath = logPath;
             this.writeToFile = true;
+        }
+
+        if (moduleName) {
+            this.moduleName = moduleName;
         }
     }
 
@@ -44,7 +49,9 @@ export default class Logger {
 
     // Create the log message based on given inputs
     private constructLogMessage(initialMessage: string, logLevel: string) {
-        initialMessage = `[${new Date().toUTCString()}] ${logLevel}: ${initialMessage}`;
+        initialMessage = `[${new Date().toUTCString()}] ${
+            this.moduleName
+        } ${logLevel}: ${initialMessage}`;
         console.log(initialMessage);
         if (this.writeToFile) {
             this.writeToLogFile(initialMessage);
