@@ -125,11 +125,14 @@ client.on('message', async (message) => {
                 if (results == true) {
                     // Server is registered
                     message.channel.send(
-                        'Ok, this is where images from subreddits you add with the `!!add` command will be posted'
+                        'Ok, this is where images from subreddits you subscribe to with the `!!add` command will be posted'
                     );
                     return middleware.setServerChat(message.guild.id, message.channel.id);
                 } else {
                     // Server needs to register
+                    message.channel.send(
+                        'You need to initialize your server with the `register` command first.'
+                    );
                 }
             });
             // If it is, send a confirmation, else error out
@@ -137,12 +140,57 @@ client.on('message', async (message) => {
             break;
 
         case 'add':
+            if (args.length !== 1) {
+                return message.channel.send(
+                    'Please give a subreddit to subscribe to with the `!!add` command\nExample: `!!add funny`'
+                );
+            }
             // Check if discord server is registered AND a chat selection has been set
             // If it is, send a confirmation, else error out
             // Also, make sure the subreddit string is valid
+            return middleware.checkRegistration(message.guild.id).then((results) => {
+                if (results == true) {
+                    // Server is registered, now check for a defined chat for the bot
+                    return middleware.getDiscordDataByID(message.guild.id).then((results) => {
+                        // Make sure the channelID isn't blank
+                        console.log(results);
+
+                        if (results.channelID == null) {
+                            message.channel.send(
+                                'Make sure to tell me which chat to post images to with the `setchat` command'
+                            );
+                        } else {
+                            message.channel.send(
+                                `Checking if subreddit \`${args[0]}\` is valid...`
+                            );
+                            return rfc
+                                .getNewSubredditPostsBySubredditName(args[0])
+                                .then((posts) => {
+                                    // Shove the last 50 posts into the DB entry for the subreddit
+                                    console.log(posts)
+                                    // posts.forEach((entry) => {
+                                    //     message.channel.send(entry.url)
+                                    // })
+                                    // message.channel.send(posts[0].url);
+                                })
+                                .catch((err) => {
+                                    logger.error(err);
+                                    message.channel.send(
+                                        `It looks like I either can't find \`${args[0]}\` or the Reddit API is down.`
+                                    );
+                                });
+                        }
+                    });
+                } else {
+                    // Server needs to register
+                    message.channel.send(
+                        'You need to initialize your server with the `register` command first.'
+                    );
+                }
+            });
             break;
 
-        case 'unsubscribe':
+        case 'remove':
             // This should be a feature
             break;
 
@@ -180,6 +228,7 @@ async function adminCommandParse(arg: string) {
         middleware.dropCollection();
         (await client.users.fetch(adminID)).send('Done.');
     } else if (arg == 'get') {
+        // This is used for testing
         return middleware.getAllDiscords().then((results) => {
             console.log(results);
             client.users.fetch(adminID).then((user) => {

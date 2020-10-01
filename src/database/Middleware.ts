@@ -90,13 +90,17 @@ export default class Middleware {
     // This is more of an unsubscribe message
     clearServerChat() {}
 
-    addServerRedditInfo() {
-        // Make sure the subreddit is actually valid to add first
-    }
+    addServerRedditInfo() {}
 
     removeServerRedditInfo() {}
 
     updateServerRedditInfoCache() {
         // This is where the 'last seen' posts get placed
+    }
+
+    getDiscordDataByID(discordID: string) {
+        return this.db.checkIfDiscordExists(discordID).then((results) => {
+            return results;
+        });
     }
 }
