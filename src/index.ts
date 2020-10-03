@@ -41,7 +41,7 @@ let middleware = new Middleware(db);
 let rfc = new RedditFetchClient(snoowrapInstance, middleware);
 
 // Set up the periodic check for new reddit posts here
-// setInterval(intervalFunc, 1500);
+setInterval(intervalFunc, 15000);
 
 client.login(botToken);
 logger.info('Attempting to log in to Discord');
@@ -158,11 +158,6 @@ client.on('message', async (message) => {
     }
 });
 
-function intervalFunc() {
-    // this is where the fetchClient will use the middleware to refresh data/etc.
-    logger.info('Interval function reached');
-}
-
 // This is for processing admin-type commands to manage the bot from the bot itself
 async function adminCommandParse(arg: string) {
     if (arg == 'restart') {
@@ -229,5 +224,60 @@ function addCommandHandler(args, message: Discord.Message) {
                 'You need to initialize your server with the `register` command first.'
             );
         }
+    });
+}
+
+function intervalFunc() {
+    // this is where the fetchClient will use the middleware to refresh data/etc.
+    logger.info('Interval function reached');
+
+    // let promisechain =
+
+    return middleware.getAllDiscords().then((entries: any) => {
+        if (entries.length < 1) {
+            return logger.debug(`Database returned no entries...`);
+        }
+        entries.forEach((item) => {
+            // Check if there's subreddits and a channel to send to
+            if (item.channelID == '') {
+                return logger.debug(`server ${item.discordID} has no channel ID to send to`);
+            }
+            if (item.subReddits.length < 1) {
+                return logger.debug(`server ${item.discordID} has no subreddits to check...`);
+            }
+
+            return subredditNewPostsCheck(item);
+        });
+    });
+}
+
+function subredditNewPostsCheck(dbEntry) {
+    dbEntry.subReddits.forEach((entry) => {
+        // console.log(entry);
+
+        let lastSeenPosts = entry.lastSeenPosts;
+
+        return rfc.getNewSubredditPostsBySubredditName(entry.name).then((posts) => {
+            let urls = posts.map((entry) => {
+                return entry.url;
+            });
+
+            urls.forEach((url) => {
+                if (lastSeenPosts.includes(url)) {
+                    // logger.debug(`Skipping post ${url}, already exists`);
+                } else {
+                    logger.debug(`NEW POST ${url}`);
+                    // Add the post to the DB list
+                    // TODO: Okay fuck Discord.js, this works despite not being typed in typings
+                    client.channels.fetch(dbEntry.channelID).then((results: any) => {
+                        results.send('AAAA');
+                    });
+                    // client.channels.fetch(dbEntry.channelID).then((results) => {
+                    //     console.log(results);
+                    //     // results.
+                    // })
+                }
+            });
+        });
     });
 }
