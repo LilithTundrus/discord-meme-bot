@@ -80,8 +80,37 @@ export default class Database {
         });
     }
 
-    addDiscordSubreddit(discordID: string, subRedditName: string) {
+    addDiscordSubreddit(discordID: string, subRedditName: string, initialData: string[]) {
         // Make sure the channel has already been set for putting out subreddit posts
+        // First, get the current subreddit data, then add the new one
+        // TODO: does it need to be done this way?
+
+        logger.info(`Checking for discord server with ${discordID} in database`);
+        return this.client.connect().then((mc) => {
+            let dbo = mc.db(this.dbName);
+            return dbo
+                .collection('discords')
+                .findOne({ discordID: discordID })
+                .then((results) => {
+                    let currentRedditData = results.subReddits;
+                    // Check the results for a match
+                    let newSubbreditData = {
+                        name: subRedditName,
+                        lastSeenPosts: initialData,
+                    };
+                    currentRedditData.push(newSubbreditData);
+
+                    return dbo
+                        .collection('discords')
+                        .updateOne(
+                            { discordID: discordID },
+                            { $set: { subReddits: currentRedditData } }
+                        );
+                })
+                .catch((err) => {
+                    logger.error(err);
+                });
+        });
     }
 
     removeDiscordSubreddit(discordID: string, subRedditName: string) {}
@@ -115,7 +144,7 @@ export default class Database {
     updateDiscordSubredditDataByName(discordID: string, subRedditName: string) {}
 
     checkIfDiscordExists(discordID: string) {
-        logger.info(`Checking for discord  server with ${discordID} in database`);
+        logger.info(`Checking for discord server with ${discordID} in database`);
         return this.client.connect().then((mc) => {
             let dbo = mc.db(this.dbName);
             return dbo

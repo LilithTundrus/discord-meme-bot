@@ -67,24 +67,6 @@ client.on('message', async (message) => {
     logger.info(`Message event from ${message.author.id}: ${message.content}`);
 
     switch (command) {
-        case 'meme':
-            // This is where the meme command will be tested
-
-            if (args.length == 0) {
-                message.reply('Give me a subreddit name with !!meme you stupid slut');
-            } else {
-                rfc.getNewSubredditPostsBySubredditName(args[0])
-                    .then((posts) => {
-                        // posts.forEach((entry) => {
-                        //     message.channel.send(entry.url)
-                        // })
-                        message.channel.send(posts[0].url);
-                    })
-                    .catch((err) => {
-                        message.channel.send(`You fucking idiot, you cased ${err}`);
-                    });
-            }
-            break;
         case 'clearchat':
             // Clear the chat setting for the given server
             // First check if the discord server is registered, then blank out the chat field
@@ -145,53 +127,15 @@ client.on('message', async (message) => {
                     'Please give a subreddit to subscribe to with the `!!add` command\nExample: `!!add funny`'
                 );
             }
-            // Check if discord server is registered AND a chat selection has been set
-            // If it is, send a confirmation, else error out
-            // Also, make sure the subreddit string is valid
-            return middleware.checkRegistration(message.guild.id).then((results) => {
-                if (results == true) {
-                    // Server is registered, now check for a defined chat for the bot
-                    return middleware.getDiscordDataByID(message.guild.id).then((results) => {
-                        // Make sure the channelID isn't blank
-                        console.log(results);
-
-                        if (results.channelID == null) {
-                            message.channel.send(
-                                'Make sure to tell me which chat to post images to with the `setchat` command'
-                            );
-                        } else {
-                            message.channel.send(
-                                `Checking if subreddit \`${args[0]}\` is valid...`
-                            );
-                            return rfc
-                                .getNewSubredditPostsBySubredditName(args[0])
-                                .then((posts) => {
-                                    // Shove the last 50 posts into the DB entry for the subreddit
-                                    console.log(posts)
-                                    // posts.forEach((entry) => {
-                                    //     message.channel.send(entry.url)
-                                    // })
-                                    // message.channel.send(posts[0].url);
-                                })
-                                .catch((err) => {
-                                    logger.error(err);
-                                    message.channel.send(
-                                        `It looks like I either can't find \`${args[0]}\` or the Reddit API is down.`
-                                    );
-                                });
-                        }
-                    });
-                } else {
-                    // Server needs to register
-                    message.channel.send(
-                        'You need to initialize your server with the `register` command first.'
-                    );
-                }
-            });
+            return addCommandHandler(args, message);
             break;
 
         case 'remove':
-            // This should be a feature
+            // TODO: This should be a feature
+            break;
+
+        case 'subs':
+            // Show the user the current subreddits they're subscribed to
             break;
 
         // Used for testing or maybe like a console menu?
@@ -237,4 +181,53 @@ async function adminCommandParse(arg: string) {
         });
     }
     // TODO: Add more features here
+}
+
+function addCommandHandler(args, message: Discord.Message) {
+    // Check if discord server is registered AND a chat selection has been set
+    // If it is, send a confirmation, else error out
+    // Also, make sure the subreddit string is valid
+    return middleware.checkRegistration(message.guild.id).then((results) => {
+        if (results == true) {
+            // Server is registered, now check for a defined chat for the bot
+            return middleware.getDiscordDataByID(message.guild.id).then((results) => {
+                // Make sure the channelID isn't blank
+                console.log(results);
+
+                if (results.channelID == '') {
+                    message.channel.send(
+                        'Make sure to tell me which chat to post images to with the `setchat` command'
+                    );
+                } else {
+                    message.channel.send(`Checking if subreddit \`${args[0]}\` is valid...`);
+                    return rfc
+                        .getNewSubredditPostsBySubredditName(args[0])
+                        .then((posts) => {
+                            // TODO: Make sure the subreddit doesn't already exist
+                            // Shove the last 50 posts into the DB entry for the subreddit
+                            // console.log(posts);
+                            let urls = posts.map((entry) => {
+                                return entry.url;
+                            });
+                            message.channel.send(
+                                `Ok, I added \`${args[0]}\`, you'll get new posts from there.`
+                            );
+
+                            return middleware.addServerRedditInfo(message.guild.id, args[0], urls);
+                        })
+                        .catch((err) => {
+                            logger.error(err);
+                            message.channel.send(
+                                `It looks like I either can't find \`${args[0]}\` or the Reddit API is down.`
+                            );
+                        });
+                }
+            });
+        } else {
+            // Server needs to register
+            message.channel.send(
+                'You need to initialize your server with the `register` command first.'
+            );
+        }
+    });
 }
