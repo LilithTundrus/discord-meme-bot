@@ -53,7 +53,11 @@ export default class Middleware {
     }
 
     getAllRedditData() {
-        
+        return this.db.getAllReddits();
+    }
+
+    getServerRedditData(discordID: string) {
+        return this.db.getDiscordSubreddits(discordID);
     }
 
     // Function registerDiscordServer already handles this
@@ -100,9 +104,9 @@ export default class Middleware {
 
     removeServerRedditInfo() {}
 
-    updateServerRedditInfoCache() {
+    updateServerRedditInfoCache(discordID, redditName, newData) {
         // This is where the 'last seen' posts get placed
-
+        return this.db.updateDiscordSubredditDataByName(discordID, redditName, newData);
     }
 
     getDiscordDataByID(discordID: string) {

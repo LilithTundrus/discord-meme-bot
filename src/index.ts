@@ -173,7 +173,16 @@ async function adminCommandParse(arg: string) {
                 user.send(JSON.stringify(results, null, 2));
             });
         });
+    } else if (arg == 'reddit') {
+        // This is used for testing
+        return middleware.getAllRedditData().then((results) => {
+            console.log(results);
+            client.users.fetch(adminID).then((user) => {
+                user.send(JSON.stringify(results, null, 2));
+            });
+        });
     }
+
     // TODO: Add more features here
 }
 
@@ -237,36 +246,44 @@ function intervalFunc() {
         if (entries.length < 1) {
             return logger.debug(`Database returned no entries...`);
         }
-        entries.forEach((item) => {
+        entries.forEach((entry) => {
             // Check if there's subreddits and a channel to send to
-            if (item.channelID == '') {
-                return logger.debug(`server ${item.discordID} has no channel ID to send to`);
+            if (entry.channelID == '') {
+                return logger.debug(`server ${entry.discordID} has no channel ID to send to`);
             }
-            if (item.subReddits.length < 1) {
-                return logger.debug(`server ${item.discordID} has no subreddits to check...`);
-            }
-
-            promiseChain = promiseChain.then(() => {
-                return subredditNewPostsCheck(item);
+            return middleware.getServerRedditData(entry.discordID).then((results) => {
+                if (results.length < 1) {
+                    return logger.debug(`server ${entry.discordID} has subbreddits to check`);
+                } else {
+                    results.forEach((reddit) => {
+                        promiseChain = promiseChain.then(() => {
+                            subredditNewPostsCheck(entry, reddit);
+                        });
+                    });
+                }
             });
         });
     });
     return promiseChain;
 }
 
-function subredditNewPostsCheck(dbEntry) {
-    dbEntry.subReddits.forEach((entry) => {
+function subredditNewPostsCheck(discord, reddit) {
+    let lastSeenPosts = reddit.posts;
 
-        let lastSeenPosts = entry.lastSeenPosts;
+    // console.log(discord);
 
-        return rfc.getNewSubredditPostsBySubredditName(entry.name).then((posts) => {
+    return rfc
+        .getNewSubredditPostsBySubredditName(reddit.name)
+        .then((posts) => {
             let urls = posts.map((entry) => {
                 return entry.url;
             });
 
+            console.log(urls.length);
+
             urls.forEach((url) => {
                 if (lastSeenPosts.includes(url)) {
-                    // logger.debug(`Skipping post ${url}, already exists`);
+                    logger.debug(`Skipping post ${url}, already exists`);
                 } else {
                     logger.debug(`NEW POST ${url}`);
                     // Add the post to the DB list
@@ -276,9 +293,13 @@ function subredditNewPostsCheck(dbEntry) {
                     // });
 
                     // After making the post, update the DB to make each posts.url the new set
-                    middleware.updateServerRedditInfoCache()
+                    // middleware.updateServerRedditInfoCache();
                 }
             });
+
+            return middleware.updateServerRedditInfoCache(discord.discordID, reddit.name, urls);
+        })
+        .then(() => {
+            logger.debug(`Done with ${reddit.name}`);
         });
-    });
 }

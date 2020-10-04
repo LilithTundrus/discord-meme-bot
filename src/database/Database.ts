@@ -59,6 +59,23 @@ export default class Database {
         });
     }
 
+    getAllReddits() {
+        logger.info('Database received a request for ALL Reddits');
+        return this.client.connect().then((mc) => {
+            let dbo = mc.db(this.dbName);
+            return dbo
+                .collection('reddits')
+                .find({})
+                .toArray()
+                .then((results) => {
+                    return results;
+                })
+                .catch((err) => {
+                    logger.error(err);
+                });
+        });
+    }
+
     registerDiscord(discordID: string) {
         logger.info(`Database attempting to register discord server with ID ${discordID}`);
         return this.client.connect().then((mc) => {
@@ -66,7 +83,6 @@ export default class Database {
                 discordID: discordID,
                 channelID: '',
                 upvoteThreshold: 50,
-                subReddits: [],
             };
             let dbo = mc.db(this.dbName);
             dbo.collection('discords')
@@ -92,20 +108,12 @@ export default class Database {
                 .collection('discords')
                 .findOne({ discordID: discordID })
                 .then((results) => {
-                    let currentRedditData = results.subReddits;
-                    // Check the results for a match
-                    let newSubbreditData = {
+                    let redditData = {
+                        discordID: discordID,
                         name: subRedditName,
-                        lastSeenPosts: initialData,
+                        posts: initialData,
                     };
-                    currentRedditData.push(newSubbreditData);
-
-                    return dbo
-                        .collection('discords')
-                        .updateOne(
-                            { discordID: discordID },
-                            { $set: { subReddits: currentRedditData } }
-                        );
+                    return dbo.collection('reddits').insertOne(redditData);
                 })
                 .catch((err) => {
                     logger.error(err);
@@ -115,7 +123,18 @@ export default class Database {
 
     removeDiscordSubreddit(discordID: string, subRedditName: string) {}
 
-    getDiscordSubreddits(discordID: string) {}
+    getDiscordSubreddits(discordID: string) {
+        return this.client.connect().then((mc) => {
+            let dbo = mc.db(this.dbName);
+            return dbo
+                .collection('reddits')
+                .find({ discordID: discordID })
+                .toArray()
+                .then((results) => {
+                    return results;
+                });
+        });
+    }
 
     updateDiscordChannelID(discordID: string, channelID: string) {
         logger.info(
@@ -140,8 +159,20 @@ export default class Database {
 
     getDiscordSubredditDataByName(discordID: string, subRedditName: string) {}
 
-    updateDiscordSubredditDataByName(discordID: string, subRedditName: string) {
-
+    updateDiscordSubredditDataByName(discordID: string, subRedditName: string, newData: string[]) {
+        return this.client.connect().then((mc) => {
+            let dbo = mc.db(this.dbName);
+            return dbo
+                .collection('reddits')
+                .find({ discordID: discordID })
+                .toArray()
+                .then((results) => {
+                    let list = results.find((entry) => {
+                        return entry.name == subRedditName;
+                    });
+                    console.log(list);
+                });
+        });
     }
 
     checkIfDiscordExists(discordID: string) {
@@ -174,7 +205,7 @@ export default class Database {
     }
 
     createRedditCollection() {
-                // NOTE: Mongo doesn't actually create a table until data is entered into it
+        // NOTE: Mongo doesn't actually create a table until data is entered into it
         // So this is just an example
         this.client.connect().then((mc) => {
             logger.debug('Created main database. NOTE THIS DOES NOTHING UNTIL DATA IS ENTERED!!!');
@@ -190,6 +221,18 @@ export default class Database {
                 .dropCollection('discords')
                 .then((results) => {
                     logger.info('Dropped main table');
+                    console.log(results);
+                })
+                .catch((err) => {
+                    logger.error(err);
+                });
+        });
+        logger.warn('Attempting to drop the Reddit table');
+        this.client.connect().then((mc) => {
+            mc.db(this.dbName)
+                .dropCollection('reddits')
+                .then((results) => {
+                    logger.info('Dropped Reddit table');
                     console.log(results);
                 })
                 .catch((err) => {
