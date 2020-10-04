@@ -52,6 +52,10 @@ export default class Middleware {
         return this.db.getAll();
     }
 
+    getAllRedditData() {
+        
+    }
+
     // Function registerDiscordServer already handles this
     // checkIfServerExists() {
 
@@ -98,6 +102,7 @@ export default class Middleware {
 
     updateServerRedditInfoCache() {
         // This is where the 'last seen' posts get placed
+
     }
 
     getDiscordDataByID(discordID: string) {

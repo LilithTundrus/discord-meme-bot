@@ -118,7 +118,6 @@ client.on('message', async (message) => {
                 }
             });
             // If it is, send a confirmation, else error out
-
             break;
 
         case 'add':
@@ -231,9 +230,10 @@ function intervalFunc() {
     // this is where the fetchClient will use the middleware to refresh data/etc.
     logger.info('Interval function reached');
 
-    // let promisechain =
+    // Set up a chain of promises to keep this synchronous
+    let promiseChain = Promise.resolve();
 
-    return middleware.getAllDiscords().then((entries: any) => {
+    middleware.getAllDiscords().then((entries: any) => {
         if (entries.length < 1) {
             return logger.debug(`Database returned no entries...`);
         }
@@ -246,14 +246,16 @@ function intervalFunc() {
                 return logger.debug(`server ${item.discordID} has no subreddits to check...`);
             }
 
-            return subredditNewPostsCheck(item);
+            promiseChain = promiseChain.then(() => {
+                return subredditNewPostsCheck(item);
+            });
         });
     });
+    return promiseChain;
 }
 
 function subredditNewPostsCheck(dbEntry) {
     dbEntry.subReddits.forEach((entry) => {
-        // console.log(entry);
 
         let lastSeenPosts = entry.lastSeenPosts;
 
@@ -269,13 +271,12 @@ function subredditNewPostsCheck(dbEntry) {
                     logger.debug(`NEW POST ${url}`);
                     // Add the post to the DB list
                     // TODO: Okay fuck Discord.js, this works despite not being typed in typings
-                    client.channels.fetch(dbEntry.channelID).then((results: any) => {
-                        results.send('AAAA');
-                    });
-                    // client.channels.fetch(dbEntry.channelID).then((results) => {
-                    //     console.log(results);
-                    //     // results.
-                    // })
+                    // client.channels.fetch(dbEntry.channelID).then((results: any) => {
+                    //     results.send(url);
+                    // });
+
+                    // After making the post, update the DB to make each posts.url the new set
+                    middleware.updateServerRedditInfoCache()
                 }
             });
         });

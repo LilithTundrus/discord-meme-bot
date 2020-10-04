@@ -121,7 +121,6 @@ export default class Database {
         logger.info(
             `Attempting to update discord channel for server ${discordID} to channel ${channelID}`
         );
-        console.log(discordID, channelID);
         return this.client.connect().then((mc) => {
             let dbo = mc.db(this.dbName);
             return dbo
@@ -141,7 +140,9 @@ export default class Database {
 
     getDiscordSubredditDataByName(discordID: string, subRedditName: string) {}
 
-    updateDiscordSubredditDataByName(discordID: string, subRedditName: string) {}
+    updateDiscordSubredditDataByName(discordID: string, subRedditName: string) {
+
+    }
 
     checkIfDiscordExists(discordID: string) {
         logger.info(`Checking for discord server with ${discordID} in database`);
@@ -169,6 +170,15 @@ export default class Database {
         this.client.connect().then((mc) => {
             logger.debug('Created main database. NOTE THIS DOES NOTHING UNTIL DATA IS ENTERED!!!');
             mc.db(this.dbName).createCollection('discords');
+        });
+    }
+
+    createRedditCollection() {
+                // NOTE: Mongo doesn't actually create a table until data is entered into it
+        // So this is just an example
+        this.client.connect().then((mc) => {
+            logger.debug('Created main database. NOTE THIS DOES NOTHING UNTIL DATA IS ENTERED!!!');
+            mc.db(this.dbName).createCollection('reddits');
         });
     }
 
