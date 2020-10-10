@@ -22,6 +22,18 @@ import * as snoowrap from 'snoowrap';
 const client = new Discord.Client();
 const prefix = botPrefix;
 
+// What's left to do:
+// TODO: Finish all commands to get them working:
+//  - A better help command
+//  - remove command, for removing subreddits
+//  - showsubs command, for showing all of the subscribed subreddits (this should be an embed message)
+// TODO: Get all database functions working
+// TODO: Get all middleware functions working
+// TODO: Clean up project and files
+// TODO: Make sure logging is all set up and in place
+// TODO: Have the admin command support features/diagnostics
+// TODO: Make sure database connection is always good
+
 // Initiate the wrapper for getting reddit content here
 const snoowrapInstance = new snoowrap.default({
     userAgent: redditFetchConfig.userAgent,
@@ -67,11 +79,6 @@ client.on('message', async (message) => {
     logger.info(`Message event from ${message.author.id}: ${message.content}`);
 
     switch (command) {
-        case 'clearchat':
-            // Clear the chat setting for the given server
-            // First check if the discord server is registered, then blank out the chat field
-            message.channel.send('AAAAAAAA');
-            break;
 
         case 'register':
             middleware.registerDiscordServer(message.guild.id).then((results) => {
@@ -130,7 +137,6 @@ client.on('message', async (message) => {
             break;
 
         case 'remove':
-            // TODO: This should be a feature
             break;
 
         case 'subs':
@@ -182,8 +188,6 @@ async function adminCommandParse(arg: string) {
             });
         });
     }
-
-    // TODO: Add more features here
 }
 
 function addCommandHandler(args, message: Discord.Message) {
@@ -236,7 +240,7 @@ function addCommandHandler(args, message: Discord.Message) {
 }
 
 function intervalFunc() {
-    // this is where the fetchClient will use the middleware to refresh data/etc.
+    // This is where the fetchClient will use the middleware to refresh data/etc.
     logger.debug('Interval function reached');
 
     // Set up a chain of promises to keep this synchronous
@@ -267,8 +271,12 @@ function intervalFunc() {
     return promiseChain;
 }
 
+// TODO: This might need another promise chain to work correctly
 function subredditNewPostsCheck(discord, reddit) {
     let lastSeenPosts = reddit.posts;
+
+    // Set up a chain of promises to keep this synchronous
+    let promiseChain = Promise.resolve();
 
     return rfc
         .getNewSubredditPostsBySubredditName(reddit.name)
@@ -282,8 +290,11 @@ function subredditNewPostsCheck(discord, reddit) {
                     // logger.debug(`Skipping post ${url}, already exists`);
                 } else {
                     logger.debug(`NEW POST ${url}`);
+
+                    let post = posts.find((entry) => {
+                        return entry.url == url;
+                    });
                     // Add the post to the DB list
-                    // TODO: Okay fuck Discord.js, this works despite not being typed in typings
                     // Construct the embed message:
                     // From WHAT SUBREDDIT
                     // WHO POSTED IT
@@ -291,14 +302,11 @@ function subredditNewPostsCheck(discord, reddit) {
                     // etc. etc.
 
                     // Craft the message:
-
+                    // Results is defined as any because the Discord.js typings are wrong, this works fine
                     return client.channels.fetch(discord.channelID).then((results: any) => {
-                        let post = posts.find((entry) => {
-                            return entry.url == url;
-                        });
                         let msg = `New post from ${post.subreddit.name}: ${url}`;
 
-                        results.send(msg);
+                        return results.send(msg);
                     });
                 }
             });
