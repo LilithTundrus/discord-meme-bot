@@ -35,4 +35,6 @@ const adminEmbed = new Discord.MessageEmbed()
     .addField('Commands:', 'Reset \nRestart')
     .setTimestamp();
 
+const redditEmbed = new Discord.MessageEmbed();
+
 export { exampleEmbed, adminEmbed };

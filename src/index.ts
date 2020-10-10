@@ -41,7 +41,7 @@ let middleware = new Middleware(db);
 let rfc = new RedditFetchClient(snoowrapInstance, middleware);
 
 // Set up the periodic check for new reddit posts here
-setInterval(intervalFunc, 15000);
+setInterval(intervalFunc, 15000 * 4);
 
 client.login(botToken);
 logger.info('Attempting to log in to Discord');
@@ -237,7 +237,7 @@ function addCommandHandler(args, message: Discord.Message) {
 
 function intervalFunc() {
     // this is where the fetchClient will use the middleware to refresh data/etc.
-    logger.info('Interval function reached');
+    logger.debug('Interval function reached');
 
     // Set up a chain of promises to keep this synchronous
     let promiseChain = Promise.resolve();
@@ -257,7 +257,7 @@ function intervalFunc() {
                 } else {
                     results.forEach((reddit) => {
                         promiseChain = promiseChain.then(() => {
-                            subredditNewPostsCheck(entry, reddit);
+                            return subredditNewPostsCheck(entry, reddit);
                         });
                     });
                 }
@@ -270,8 +270,6 @@ function intervalFunc() {
 function subredditNewPostsCheck(discord, reddit) {
     let lastSeenPosts = reddit.posts;
 
-    // console.log(discord);
-
     return rfc
         .getNewSubredditPostsBySubredditName(reddit.name)
         .then((posts) => {
@@ -279,21 +277,29 @@ function subredditNewPostsCheck(discord, reddit) {
                 return entry.url;
             });
 
-            console.log(urls.length);
-
             urls.forEach((url) => {
                 if (lastSeenPosts.includes(url)) {
-                    logger.debug(`Skipping post ${url}, already exists`);
+                    // logger.debug(`Skipping post ${url}, already exists`);
                 } else {
                     logger.debug(`NEW POST ${url}`);
                     // Add the post to the DB list
                     // TODO: Okay fuck Discord.js, this works despite not being typed in typings
-                    // client.channels.fetch(dbEntry.channelID).then((results: any) => {
-                    //     results.send(url);
-                    // });
+                    // Construct the embed message:
+                    // From WHAT SUBREDDIT
+                    // WHO POSTED IT
+                    // Current upvotes
+                    // etc. etc.
 
-                    // After making the post, update the DB to make each posts.url the new set
-                    // middleware.updateServerRedditInfoCache();
+                    // Craft the message:
+
+                    return client.channels.fetch(discord.channelID).then((results: any) => {
+                        let post = posts.find((entry) => {
+                            return entry.url == url;
+                        });
+                        let msg = `New post from ${post.subreddit.name}: ${url}`;
+
+                        results.send(msg);
+                    });
                 }
             });
 

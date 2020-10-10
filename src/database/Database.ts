@@ -160,6 +160,7 @@ export default class Database {
     getDiscordSubredditDataByName(discordID: string, subRedditName: string) {}
 
     updateDiscordSubredditDataByName(discordID: string, subRedditName: string, newData: string[]) {
+        logger.info(`Attempting to update reddit info ${subRedditName} for server ${discordID}`);
         return this.client.connect().then((mc) => {
             let dbo = mc.db(this.dbName);
             return dbo
@@ -167,10 +168,14 @@ export default class Database {
                 .find({ discordID: discordID })
                 .toArray()
                 .then((results) => {
-                    let list = results.find((entry) => {
+                    let object = results.find((entry) => {
                         return entry.name == subRedditName;
                     });
-                    console.log(list);
+                    dbo.collection('reddits')
+                        .updateOne({ _id: object._id }, { $set: { posts: newData } })
+                        .then(() => {
+                            // logger.info(`Updated ${subRedditName} to new cached data: ${newData}`);
+                        });
                 });
         });
     }
