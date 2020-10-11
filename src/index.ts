@@ -101,11 +101,22 @@ client.on('message', async (message) => {
             });
             break;
 
-            case 'unregister':
-                // Check if the discord server is registered at all first
-                // Then, remove reddit data if any 
-                // Then remove the server data
-                break;
+        case 'unregister':
+            // Check if the discord server is registered at all first
+            // Then, remove reddit data if any
+            // Then remove the server data
+            return middleware.checkRegistration(message.guild.id).then((results) => {
+                if (results == true) {
+                    // Server is registered
+                    return middleware.removeAllDiscordInfo(message.guild.id).then(() => {
+                        message.channel.send('This server has been unregistered with the bot!');
+                    });
+                } else {
+                    // Server isn't registered
+                    message.channel.send('Sorry, it looks like this server is not registered.');
+                }
+            });
+            break;
 
         case 'help':
             // Display the help message
@@ -142,10 +153,14 @@ client.on('message', async (message) => {
         case 'remove':
             if (args.length !== 1) {
                 return message.channel.send(
-                    'Please give a subreddit to subscribe to with the `!!add` command\nExample: `!!add funny`'
+                    'Please give a subreddit to unsubscribe to with the `!!remove` command\nExample: `!!remove funny`'
                 );
             }
-            return middleware.removeServerRedditInfo(message.guild.id, args[0]);
+            return middleware.removeServerRedditInfo(message.guild.id, args[0]).then(() => {
+                return message.channel.send(
+                    `Ok, I've removed ${args[0]} from your reddit subscription list`
+                );
+            });
             break;
 
         case 'showsubs':
@@ -294,33 +309,34 @@ function subredditNewPostsCheck(discord, reddit) {
                 return entry.url;
             });
 
-            urls.forEach((url) => {
-                if (lastSeenPosts.includes(url)) {
-                    // logger.debug(`Skipping post ${url}, already exists`);
-                } else {
-                    logger.debug(`NEW POST ${url}`);
+            posts.forEach((post) => {
+                promiseChain = promiseChain.then(() => {
+                    if (lastSeenPosts.includes(post.url)) {
+                        // logger.debug(`Skipping post ${url}, already exists`);
+                    } else {
+                        logger.debug(`NEW POST ${post.url}`);
 
-                    let post = posts.find((entry) => {
-                        return entry.url == url;
-                    });
-                    // Add the post to the DB list
-                    // Construct the embed message:
-                    // From WHAT SUBREDDIT
-                    // WHO POSTED IT
-                    // Current upvotes
-                    // etc. etc.
+                        // Add the post to the DB list
+                        // Construct the embed message:
+                        // From WHAT SUBREDDIT
+                        // WHO POSTED IT
+                        // Current upvotes
+                        // etc. etc.
 
-                    // Craft the message:
-                    // Results is defined as any because the Discord.js typings are wrong, this works fine
-                    return client.channels.fetch(discord.channelID).then((results: any) => {
-                        let msg = `New post from ${post.subreddit.name}: ${url}`;
+                        // Create the message:
+                        // Results is defined as any because the Discord.js typings are wrong, this works fine
+                        return client.channels.fetch(discord.channelID).then((results: any) => {
+                            let msg = `New post from ${post.subreddit_name_prefixed}: ${post.url}`;
 
-                        return results.send(msg);
-                    });
-                }
+                            return results.send(msg);
+                        });
+                    }
+                });
             });
 
-            return middleware.updateServerRedditInfoCache(discord.discordID, reddit.name, urls);
+            return promiseChain.then(() => {
+                return middleware.updateServerRedditInfoCache(discord.discordID, reddit.name, urls);
+            });
         })
         .then(() => {
             logger.debug(`Done with ${reddit.name}`);
