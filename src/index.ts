@@ -25,7 +25,6 @@ const prefix = botPrefix;
 // What's left to do:
 // TODO: Finish all commands to get them working:
 //  - A better help command
-//  - remove command, for removing subreddits
 //  - showsubs command, for showing all of the subscribed subreddits (this should be an embed message)
 // TODO: Get all database functions working
 // TODO: Get all middleware functions working
@@ -79,7 +78,6 @@ client.on('message', async (message) => {
     logger.info(`Message event from ${message.author.id}: ${message.content}`);
 
     switch (command) {
-
         case 'register':
             middleware.registerDiscordServer(message.guild.id).then((results) => {
                 if (results == true) {
@@ -103,6 +101,12 @@ client.on('message', async (message) => {
             });
             break;
 
+            case 'unregister':
+                // Check if the discord server is registered at all first
+                // Then, remove reddit data if any 
+                // Then remove the server data
+                break;
+
         case 'help':
             // Display the help message
             message.channel.send(embeds.exampleEmbed);
@@ -124,7 +128,6 @@ client.on('message', async (message) => {
                     );
                 }
             });
-            // If it is, send a confirmation, else error out
             break;
 
         case 'add':
@@ -137,9 +140,15 @@ client.on('message', async (message) => {
             break;
 
         case 'remove':
+            if (args.length !== 1) {
+                return message.channel.send(
+                    'Please give a subreddit to subscribe to with the `!!add` command\nExample: `!!add funny`'
+                );
+            }
+            return middleware.removeServerRedditInfo(message.guild.id, args[0]);
             break;
 
-        case 'subs':
+        case 'showsubs':
             // Show the user the current subreddits they're subscribed to
             break;
 

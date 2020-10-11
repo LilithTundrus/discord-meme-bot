@@ -98,9 +98,6 @@ export default class Database {
 
     addDiscordSubreddit(discordID: string, subRedditName: string, initialData: string[]) {
         // Make sure the channel has already been set for putting out subreddit posts
-        // First, get the current subreddit data, then add the new one
-        // TODO: does it need to be done this way?
-
         logger.info(`Checking for discord server with ${discordID} in database`);
         return this.client.connect().then((mc) => {
             let dbo = mc.db(this.dbName);
@@ -121,7 +118,25 @@ export default class Database {
         });
     }
 
-    removeDiscordSubreddit(discordID: string, subRedditName: string) {}
+    removeDiscordSubreddit(discordID: string, subRedditName: string) {
+        logger.info(`Checking for discord server with ${discordID} in database`);
+        return this.client.connect().then((mc) => {
+            let dbo = mc.db(this.dbName);
+            return dbo
+                .collection('discords')
+                .findOne({ discordID: discordID })
+                .then((results) => {
+                    let redditData = {
+                        discordID: discordID,
+                        name: subRedditName,
+                    };
+                    return dbo.collection('reddits').deleteOne(redditData);
+                })
+                .catch((err) => {
+                    logger.error(err);
+                });
+        });
+    }
 
     getDiscordSubreddits(discordID: string) {
         return this.client.connect().then((mc) => {
@@ -197,6 +212,32 @@ export default class Database {
     }
 
     setUpvoteThreshold(discordID: string, upvoteThreshold: number) {}
+
+    removeRedditData(discordID) {
+        logger.warn(`Removing reddit data for discord ${discordID}`);
+        return this.client.connect().then((mc) => {
+            let dbo = mc.db(this.dbName);
+            return dbo
+                .collection('reddits')
+                .deleteMany({ discordID: discordID })
+                .then((results) => {
+                    logger.info(`Removed reddit data for ${discordID}: ${results.deletedCount}`);
+                });
+        });
+    }
+
+    removeDiscordData(discordID) {
+        logger.warn(`Removing discord data for discord ${discordID}`);
+        return this.client.connect().then((mc) => {
+            let dbo = mc.db(this.dbName);
+            return dbo
+                .collection('discords')
+                .deleteOne({ discordID: discordID })
+                .then((results) => {
+                    logger.info(`Removed discord data for ${discordID}: ${results}`);
+                });
+        });
+    }
 
     //#region One time run functions
 

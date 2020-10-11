@@ -102,7 +102,9 @@ export default class Middleware {
         return this.db.addDiscordSubreddit(discordID, subRedditName, initialDataSet);
     }
 
-    removeServerRedditInfo() {}
+    removeServerRedditInfo(discordID: string, subRedditName: string) {
+        return this.db.removeDiscordSubreddit(discordID, subRedditName);
+    }
 
     updateServerRedditInfoCache(discordID, redditName, newData) {
         // This is where the 'last seen' posts get placed
