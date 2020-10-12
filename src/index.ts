@@ -28,6 +28,7 @@ const prefix = botPrefix;
 // TODO: Set up a rolling check on the database to make sure connection stays good
 // BIG TODO: Maybe let the user set a chat for EACH subreddit add/remove???
 // BIG TODO: Allow custom prefixes for bot commands
+// TODO: Fix 'bug' where upper/lowercase is considered different for subreddits
 
 // Initiate the wrapper for getting reddit content here
 const snoowrapInstance = new snoowrap.default({
@@ -124,24 +125,6 @@ client.on('message', async (message) => {
             message.channel.send(embeds.helpEmbed);
             break;
 
-        case 'setchat':
-            // Check if discord server is registered
-            return middleware.checkRegistration(message.guild.id).then((results) => {
-                if (results == true) {
-                    // Server is registered
-                    message.channel.send(
-                        'Ok, this is where images from subreddits you subscribe to with the `!!add` command will be posted'
-                    );
-                    return middleware.setServerChat(message.guild.id, message.channel.id);
-                } else {
-                    // Server needs to register
-                    message.channel.send(
-                        'You need to initialize your server with the `register` command first.'
-                    );
-                }
-            });
-            break;
-
         case 'add':
             if (args.length !== 1) {
                 return message.channel.send(
@@ -165,6 +148,7 @@ client.on('message', async (message) => {
             break;
 
         case 'showsubs':
+            // TODO: have this show the channel name as well
             // Show the user the current subreddits they're subscribed to
             return middleware.getServerRedditData(message.guild.id).then((results) => {
                 if (results.length < 1) {
@@ -245,35 +229,32 @@ function addCommandHandler(args, message: Discord.Message) {
         if (results == true) {
             // Server is registered, now check for a defined chat for the bot
             return middleware.getDiscordDataByID(message.guild.id).then((results) => {
-                // Make sure the channelID isn't blank
-
-                if (results.channelID == '') {
-                    message.channel.send(
-                        'Make sure to tell me which chat to post images to with the `setchat` command'
-                    );
-                } else {
-                    message.channel.send(`Checking if subreddit \`${args[0]}\` is valid...`);
-                    return rfc
-                        .getNewSubredditPostsBySubredditName(args[0])
-                        .then((posts) => {
-                            // TODO: Make sure the subreddit doesn't already exist
-                            // Shove the last 50 posts into the DB entry for the subreddit
-                            let urls = posts.map((entry) => {
-                                return entry.url;
-                            });
-                            message.channel.send(
-                                `Ok, I added \`${args[0]}\`, you'll get new posts from there.`
-                            );
-
-                            return middleware.addServerRedditInfo(message.guild.id, args[0], urls);
-                        })
-                        .catch((err) => {
-                            logger.error(err);
-                            message.channel.send(
-                                `It looks like I either can't find \`${args[0]}\` or the Reddit API is down.`
-                            );
+                message.channel.send(`Checking if subreddit \`${args[0]}\` is valid...`);
+                return rfc
+                    .getNewSubredditPostsBySubredditName(args[0])
+                    .then((posts) => {
+                        // TODO: Make sure the subreddit doesn't already exist
+                        // Shove the last 50 posts into the DB entry for the subreddit
+                        let urls = posts.map((entry) => {
+                            return entry.url;
                         });
-                }
+                        message.channel.send(
+                            `Ok, I added \`${args[0]}\`, you'll get new posts from there.`
+                        );
+
+                        return middleware.addServerRedditInfo(
+                            message.guild.id,
+                            message.channel.id,
+                            args[0],
+                            urls
+                        );
+                    })
+                    .catch((err) => {
+                        logger.error(err);
+                        message.channel.send(
+                            `It looks like I either can't find \`${args[0]}\` or the Reddit API is down.`
+                        );
+                    });
             });
         } else {
             // Server needs to register
@@ -296,10 +277,6 @@ function intervalFunc() {
             return logger.debug(`Database returned no entries...`);
         }
         entries.forEach((entry) => {
-            // Check if there's subreddits and a channel to send to
-            if (entry.channelID == '') {
-                return logger.debug(`server ${entry.discordID} has no channel ID to send to`);
-            }
             return middleware.getServerRedditData(entry.discordID).then((results) => {
                 if (results.length < 1) {
                     return logger.debug(`server ${entry.discordID} has subbreddits to check`);
@@ -339,7 +316,7 @@ function subredditNewPostsCheck(discord, reddit) {
                         // Construct the embed message:
 
                         // Results is defined as any because the Discord.js typings are wrong, this works fine
-                        return client.channels.fetch(discord.channelID).then((results: any) => {
+                        return client.channels.fetch(reddit.channelID).then((results: any) => {
                             let msg = `New post from ${post.subreddit_name_prefixed} with ${post.ups} upvotes: ${post.url}`;
 
                             return results.send(msg);

@@ -96,7 +96,12 @@ export default class Database {
         });
     }
 
-    addDiscordSubreddit(discordID: string, subRedditName: string, initialData: string[]) {
+    addDiscordSubreddit(
+        discordID: string,
+        channelID,
+        subRedditName: string,
+        initialData: string[]
+    ) {
         // Make sure the channel has already been set for putting out subreddit posts
         logger.info(`Checking for discord server with ${discordID} in database`);
         return this.client.connect().then((mc) => {
@@ -107,6 +112,7 @@ export default class Database {
                 .then((results) => {
                     let redditData = {
                         discordID: discordID,
+                        channelID: channelID,
                         name: subRedditName,
                         posts: initialData,
                     };
