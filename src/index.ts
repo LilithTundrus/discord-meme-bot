@@ -10,7 +10,6 @@ import Logger from './Logger';
 import * as embeds from './embeds';
 
 // Node native imports
-// import * as fs from 'fs';
 
 // NPM package imports
 // Discord.js is an NPM package designed to help with creating Discord bots
@@ -23,15 +22,12 @@ const client = new Discord.Client();
 const prefix = botPrefix;
 
 // What's left to do:
-// TODO: Finish all commands to get them working:
-//  - A better help command
-//  - showsubs command, for showing all of the subscribed subreddits (this should be an embed message)
-// TODO: Get all database functions working
-// TODO: Get all middleware functions working
 // TODO: Clean up project and files
 // TODO: Make sure logging is all set up and in place
 // TODO: Have the admin command support features/diagnostics
-// TODO: Make sure database connection is always good
+// TODO: Set up a rolling check on the database to make sure connection stays good
+// BIG TODO: Maybe let the user set a chat for EACH subreddit add/remove???
+// BIG TODO: Allow custom prefixes for bot commands
 
 // Initiate the wrapper for getting reddit content here
 const snoowrapInstance = new snoowrap.default({
@@ -61,7 +57,12 @@ client.on('ready', () => {
     logger.info('Connected to Discord');
     // First time connect, mostly just to check if the database is there
     middleware.connect();
-    // TODO: Set up a rolling check on the database to make sure connection stays good
+
+    // Set a custom activity status
+    client.user.setActivity('Type !!help for help', {
+        type: 'STREAMING',
+        url: 'https://www.twitch.tv/monstercat',
+    });
 });
 
 client.on('message', async (message) => {
@@ -120,7 +121,7 @@ client.on('message', async (message) => {
 
         case 'help':
             // Display the help message
-            message.channel.send(embeds.exampleEmbed);
+            message.channel.send(embeds.helpEmbed);
             break;
 
         case 'setchat':
@@ -165,6 +166,28 @@ client.on('message', async (message) => {
 
         case 'showsubs':
             // Show the user the current subreddits they're subscribed to
+            return middleware.getServerRedditData(message.guild.id).then((results) => {
+                if (results.length < 1) {
+                    message.channel.send(
+                        'It looks like this server had no subscribed subreddits. Add some with the `!!add` command!'
+                    );
+                } else {
+                    let subredditNames = results.map((entry) => {
+                        return entry.name;
+                    });
+                    let embed = new Discord.MessageEmbed()
+                        .setColor('#0099ff')
+                        .setAuthor(client.user.username, client.user.avatarURL())
+                        .setThumbnail(client.user.avatarURL())
+                        .addField(
+                            `Subscribed subreddits for ${message.guild.name}:`,
+                            `${subredditNames.join('\n')}`
+                        )
+                        .setTimestamp();
+
+                    message.channel.send(embed);
+                }
+            });
             break;
 
         // Used for testing or maybe like a console menu?
@@ -223,7 +246,6 @@ function addCommandHandler(args, message: Discord.Message) {
             // Server is registered, now check for a defined chat for the bot
             return middleware.getDiscordDataByID(message.guild.id).then((results) => {
                 // Make sure the channelID isn't blank
-                console.log(results);
 
                 if (results.channelID == '') {
                     message.channel.send(
@@ -236,7 +258,6 @@ function addCommandHandler(args, message: Discord.Message) {
                         .then((posts) => {
                             // TODO: Make sure the subreddit doesn't already exist
                             // Shove the last 50 posts into the DB entry for the subreddit
-                            // console.log(posts);
                             let urls = posts.map((entry) => {
                                 return entry.url;
                             });
@@ -265,7 +286,7 @@ function addCommandHandler(args, message: Discord.Message) {
 
 function intervalFunc() {
     // This is where the fetchClient will use the middleware to refresh data/etc.
-    logger.debug('Interval function reached');
+    logger.info('Starting reddit check interval...');
 
     // Set up a chain of promises to keep this synchronous
     let promiseChain = Promise.resolve();
@@ -295,7 +316,7 @@ function intervalFunc() {
     return promiseChain;
 }
 
-// TODO: This might need another promise chain to work correctly
+// TODO: This might be an awful way of going about this
 function subredditNewPostsCheck(discord, reddit) {
     let lastSeenPosts = reddit.posts;
 
@@ -315,18 +336,11 @@ function subredditNewPostsCheck(discord, reddit) {
                         // logger.debug(`Skipping post ${url}, already exists`);
                     } else {
                         logger.debug(`NEW POST ${post.url}`);
-
-                        // Add the post to the DB list
                         // Construct the embed message:
-                        // From WHAT SUBREDDIT
-                        // WHO POSTED IT
-                        // Current upvotes
-                        // etc. etc.
 
-                        // Create the message:
                         // Results is defined as any because the Discord.js typings are wrong, this works fine
                         return client.channels.fetch(discord.channelID).then((results: any) => {
-                            let msg = `New post from ${post.subreddit_name_prefixed}: ${post.url}`;
+                            let msg = `New post from ${post.subreddit_name_prefixed} with ${post.ups} upvotes: ${post.url}`;
 
                             return results.send(msg);
                         });

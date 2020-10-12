@@ -60,11 +60,6 @@ export default class Middleware {
         return this.db.getDiscordSubreddits(discordID);
     }
 
-    // Function registerDiscordServer already handles this
-    // checkIfServerExists() {
-
-    // }
-
     registerDiscordServer(discordID: string) {
         // Check if the server exists before adding it
         return this.db
