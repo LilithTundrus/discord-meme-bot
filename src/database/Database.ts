@@ -26,7 +26,7 @@ export default class Database {
         // Construct the mongoDB url using the passed arguments
         this.url = `mongodb://${this.dbHost}:27017/${this.dbName}`;
         // Create a mongoDB client to be used withing the class methods
-        this.client = new mongo.MongoClient(this.url);
+        this.client = new mongo.MongoClient(this.url, { loggerLevel: 'error' });
     }
 
     // This might not actually be needed?
@@ -120,6 +120,19 @@ export default class Database {
                 })
                 .catch((err) => {
                     logger.error(err);
+                });
+        });
+    }
+
+    getSubredditByDiscordIDAndName(discordID, subRedditName) {
+        return this.client.connect().then((mc) => {
+            let dbo = mc.db(this.dbName);
+            return dbo
+                .collection('reddits')
+                .find({ discordID: discordID, name: subRedditName })
+                .toArray()
+                .then((results) => {
+                    return results;
                 });
         });
     }

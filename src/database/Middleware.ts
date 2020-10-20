@@ -93,6 +93,10 @@ export default class Middleware {
     // This is more of an unsubscribe message
     clearServerChat() {}
 
+    checkIfSubredditExists(discordID, subRedditName) {
+        return this.db.getSubredditByDiscordIDAndName(discordID, subRedditName);
+    }
+
     addServerRedditInfo(
         discordID: string,
         channelID: string,

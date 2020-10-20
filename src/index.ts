@@ -26,9 +26,10 @@ const prefix = botPrefix;
 // TODO: Make sure logging is all set up and in place
 // TODO: Have the admin command support features/diagnostics
 // TODO: Set up a rolling check on the database to make sure connection stays good
-// BIG TODO: Maybe let the user set a chat for EACH subreddit add/remove???
 // BIG TODO: Allow custom prefixes for bot commands
 // TODO: Fix 'bug' where upper/lowercase is considered different for subreddits
+// TODO: Fix references to old commands in code
+// TODO: Fix spelling and grammar (subReddit vs. subreddit)
 
 // Initiate the wrapper for getting reddit content here
 const snoowrapInstance = new snoowrap.default({
@@ -48,11 +49,11 @@ let db = new Database(dbInfo.dbHost, dbInfo.dbName);
 let middleware = new Middleware(db);
 let rfc = new RedditFetchClient(snoowrapInstance, middleware);
 
-// Set up the periodic check for new reddit posts here
+// Set up the periodic check for new reddit posts here (1 minute)
 setInterval(intervalFunc, 15000 * 4);
 
 client.login(botToken);
-logger.info('Attempting to log in to Discord');
+logger.info('Attempting to log in to Discord...');
 
 client.on('ready', () => {
     logger.info('Connected to Discord');
@@ -66,6 +67,7 @@ client.on('ready', () => {
     });
 });
 
+// TODO: I know this should be split out to not be so ugly
 client.on('message', async (message) => {
     // It's good practice to ignore other bots. This also ensures the bot ignores itself
     if (message.author.bot) return;
@@ -74,8 +76,15 @@ client.on('message', async (message) => {
     if (message.content.indexOf(prefix) !== 0) return;
 
     // Here, separate the 'command' name, and the 'arguments' for the command
-    const args = message.content.slice(prefix.length).trim().split(/ +/g);
+    // Both of these are forced to lowerCase to prevent weird issues
+    const args = message.content.toLowerCase().slice(prefix.length).trim().split(/ +/g);
     const command = args.shift().toLowerCase();
+
+    // Make sure message is NOT a DM, this is a server-only bot
+    if (message.guild == null) {
+        logger.info(`DM Message from ${message.author.id}: ${message.content}`);
+        return message.reply('Sorry, please use this bot in a valid Discord server. Thanks!');
+    }
 
     logger.info(`Message event from ${message.author.id}: ${message.content}`);
 
@@ -85,20 +94,22 @@ client.on('message', async (message) => {
                 if (results == true) {
                     // Registration was completed
                     let msg =
-                        'Got it, you now have an active discord ID, make sure to use the `!!setchat` command to set where to post things you add using the `!!add` command.';
+                        'Got it, you now have an active discord ID, you can use the `!!add` command to add a subreddits to a channel.';
                     message.channel.send(msg);
                 } else if (results == false) {
                     // Server is already registered, let the user know
                     let msg =
-                        'You are already set up with an active Discord ID. Use the `!!setchat` command to set where to post things you add using the `!!add` command.';
+                        'You are already set up with an active Discord ID. Use the `!!add` command to add subreddits to this channel.';
                     message.channel.send(msg);
                 } else {
                     // An error was returned
                     let msg =
                         'Sorry, something went wrong. Try again later. I will DM the bot admin and let them know something went wrong.';
                     message.channel.send(msg);
-                    // This may or may not work (it doesn't)
-                    client.user.send(results, { reply: `${adminID}` });
+                    client.users.fetch(adminID).then((user) => {
+                        user.send(`Error on registration: ${results}`);
+                    });
+                    logger.error(results);
                 }
             });
             break;
@@ -113,6 +124,7 @@ client.on('message', async (message) => {
                     return middleware.removeAllDiscordInfo(message.guild.id).then(() => {
                         message.channel.send('This server has been unregistered with the bot!');
                     });
+                    // TODO: Did I fucking forget to have it remove reddit data??
                 } else {
                     // Server isn't registered
                     message.channel.send('Sorry, it looks like this server is not registered.');
@@ -135,6 +147,8 @@ client.on('message', async (message) => {
             break;
 
         case 'remove':
+            // TODO: have this treat upper and lower case items the same
+            // TODO: have this actually check if the subreddit exists first
             if (args.length !== 1) {
                 return message.channel.send(
                     'Please give a subreddit to unsubscribe to with the `!!remove` command\nExample: `!!remove funny`'
@@ -174,7 +188,6 @@ client.on('message', async (message) => {
             });
             break;
 
-        // Used for testing or maybe like a console menu?
         case 'admin':
             // Check for admin ID
             if (message.author.id !== adminID) {
@@ -205,7 +218,6 @@ async function adminCommandParse(arg: string) {
     } else if (arg == 'get') {
         // This is used for testing
         return middleware.getAllDiscords().then((results) => {
-            console.log(results);
             client.users.fetch(adminID).then((user) => {
                 user.send(JSON.stringify(results, null, 2));
             });
@@ -227,35 +239,43 @@ function addCommandHandler(args, message: Discord.Message) {
     // Also, make sure the subreddit string is valid
     return middleware.checkRegistration(message.guild.id).then((results) => {
         if (results == true) {
-            // Server is registered, now check for a defined chat for the bot
-            return middleware.getDiscordDataByID(message.guild.id).then((results) => {
-                message.channel.send(`Checking if subreddit \`${args[0]}\` is valid...`);
-                return rfc
-                    .getNewSubredditPostsBySubredditName(args[0])
-                    .then((posts) => {
-                        // TODO: Make sure the subreddit doesn't already exist
-                        // Shove the last 50 posts into the DB entry for the subreddit
-                        let urls = posts.map((entry) => {
-                            return entry.url;
-                        });
-                        message.channel.send(
-                            `Ok, I added \`${args[0]}\`, you'll get new posts from there.`
-                        );
-
-                        return middleware.addServerRedditInfo(
-                            message.guild.id,
-                            message.channel.id,
-                            args[0],
-                            urls
-                        );
-                    })
-                    .catch((err) => {
-                        logger.error(err);
-                        message.channel.send(
-                            `It looks like I either can't find \`${args[0]}\` or the Reddit API is down.`
-                        );
+            return middleware.checkIfSubredditExists(message.guild.id, args[0]).then((response) => {
+                if (response.length < 1) {
+                    // Subreddit is good to add
+                    return middleware.getDiscordDataByID(message.guild.id).then((results) => {
+                        message.channel.send(`Checking if subreddit \`${args[0]}\` is valid...`);
+                        return rfc
+                            .getNewSubredditPostsBySubredditName(args[0])
+                            .then((posts) => {
+                                // TODO: Make sure the subreddit doesn't already exist
+                                // Shove the last 50 posts into the DB entry for the subreddit
+                                let urls = posts.map((entry) => {
+                                    return entry.url;
+                                });
+                                message.channel.send(
+                                    `Ok, I added \`${args[0]}\`, you'll get new posts from there.`
+                                );
+                                return middleware.addServerRedditInfo(
+                                    message.guild.id,
+                                    message.channel.id,
+                                    args[0],
+                                    urls
+                                );
+                            })
+                            .catch((err) => {
+                                logger.error(err);
+                                message.channel.send(
+                                    `It looks like I either can't find \`${args[0]}\` or the Reddit API is down.`
+                                );
+                            });
                     });
+                } else {
+                    message.channel.send(
+                        `It looks like you are already subscribed to ${args[0]}. To change the channel it is associated to, use the \`!!remove\` command.`
+                    );
+                }
             });
+            // Server is registered, now check for a defined chat for the bot
         } else {
             // Server needs to register
             message.channel.send(
@@ -265,14 +285,15 @@ function addCommandHandler(args, message: Discord.Message) {
     });
 }
 
+// This is where the fetchClient will use the middleware to refresh data/etc.
 function intervalFunc() {
-    // This is where the fetchClient will use the middleware to refresh data/etc.
     logger.info('Starting reddit check interval...');
 
     // Set up a chain of promises to keep this synchronous
     let promiseChain = Promise.resolve();
 
     middleware.getAllDiscords().then((entries: any) => {
+        // Sanity checks first
         if (entries.length < 1) {
             return logger.debug(`Database returned no entries...`);
         }
@@ -303,6 +324,7 @@ function subredditNewPostsCheck(discord, reddit) {
     return rfc
         .getNewSubredditPostsBySubredditName(reddit.name)
         .then((posts) => {
+            // Comparing the URLs is the safest way to compare new vs. old data
             let urls = posts.map((entry) => {
                 return entry.url;
             });
@@ -310,7 +332,7 @@ function subredditNewPostsCheck(discord, reddit) {
             posts.forEach((post) => {
                 promiseChain = promiseChain.then(() => {
                     if (lastSeenPosts.includes(post.url)) {
-                        // logger.debug(`Skipping post ${url}, already exists`);
+                        return;
                     } else {
                         logger.debug(`NEW POST ${post.url}`);
                         // Construct the embed message:
@@ -318,18 +340,18 @@ function subredditNewPostsCheck(discord, reddit) {
                         // Results is defined as any because the Discord.js typings are wrong, this works fine
                         return client.channels.fetch(reddit.channelID).then((results: any) => {
                             let msg = `New post from ${post.subreddit_name_prefixed} with ${post.ups} upvotes: ${post.url}`;
-
                             return results.send(msg);
                         });
                     }
                 });
             });
 
+            // After (hopefully) completing the chain of promises, update the database info for the subreddit
             return promiseChain.then(() => {
                 return middleware.updateServerRedditInfoCache(discord.discordID, reddit.name, urls);
             });
         })
         .then(() => {
-            logger.debug(`Done with ${reddit.name}`);
+            logger.info(`Done with ${reddit.name} for ${discord.discordID}`);
         });
 }

@@ -20,16 +20,15 @@ const helpEmbed = new Discord.MessageEmbed()
     // .setThumbnail('https://i.imgur.com/wSTFkRM.png')
     .addField(
         'Register',
-        'Register your discord with the bot, this needs to be done before you can use the `add` or `setchat` commands'
+        'Register your discord with the bot, this needs to be done before you can use the `add` command'
     )
     .addField('Unregister', 'Remove all data and registration for your server from the bot')
-    .addField('Setchat', 'Set the chat for which the bot will post links to')
     .addField('Add', 'Add a subreddit by its name to your sub list')
     .addField('Remove', 'Remove a subreddit by its name from your sub list')
     .addField('Showsubs', 'Show all the subreddits your server is subscribed to')
     // .setImage('https://i.imgur.com/wSTFkRM.png')
-    .setTimestamp()
-    // .setFooter('Version', '0.0.1');
+    .setTimestamp();
+// .setFooter('Version', '0.0.1');
 
 const adminEmbed = new Discord.MessageEmbed()
     .setColor('#0099ff')
