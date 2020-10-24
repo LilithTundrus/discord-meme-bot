@@ -24,12 +24,12 @@ const prefix = botPrefix;
 // What's left to do:
 // TODO: Clean up project and files
 // TODO: Make sure logging is all set up and in place
-// TODO: Have the admin command support features/diagnostics
+// TODO: Have the admin command support features/diagnostics or at least a dashboard -- version numbers/etc.
 // TODO: Set up a rolling check on the database to make sure connection stays good
 // BIG TODO: Allow custom prefixes for bot commands
-// TODO: Fix 'bug' where upper/lowercase is considered different for subreddits
-// TODO: Fix references to old commands in code
 // TODO: Fix spelling and grammar (subReddit vs. subreddit)
+// TODO: Add !!yoink to have the bot send a better info about the last post posted
+// TODO:: add an option to switch from hot or new for getting new posts
 
 // Initiate the wrapper for getting reddit content here
 const snoowrapInstance = new snoowrap.default({
@@ -116,15 +116,14 @@ client.on('message', async (message) => {
 
         case 'unregister':
             // Check if the discord server is registered at all first
-            // Then, remove reddit data if any
-            // Then remove the server data
             return middleware.checkRegistration(message.guild.id).then((results) => {
                 if (results == true) {
                     // Server is registered
                     return middleware.removeAllDiscordInfo(message.guild.id).then(() => {
-                        message.channel.send('This server has been unregistered with the bot!');
+                        return middleware.removeAllRedditInfo(message.guild.id).then(() => {
+                            message.channel.send('This server has been unregistered with the bot!');
+                        });
                     });
-                    // TODO: Did I fucking forget to have it remove reddit data??
                 } else {
                     // Server isn't registered
                     message.channel.send('Sorry, it looks like this server is not registered.');
@@ -147,8 +146,6 @@ client.on('message', async (message) => {
             break;
 
         case 'remove':
-            // TODO: have this treat upper and lower case items the same
-            // TODO: have this actually check if the subreddit exists first
             if (args.length !== 1) {
                 return message.channel.send(
                     'Please give a subreddit to unsubscribe to with the `!!remove` command\nExample: `!!remove funny`'
@@ -173,6 +170,11 @@ client.on('message', async (message) => {
                     let subredditNames = results.map((entry) => {
                         return entry.name;
                     });
+
+                    let subredditTypes = results.map((entry) => {
+                        return entry.updateType;
+                    });
+
                     let embed = new Discord.MessageEmbed()
                         .setColor('#0099ff')
                         .setAuthor(client.user.username, client.user.avatarURL())
@@ -181,11 +183,23 @@ client.on('message', async (message) => {
                             `Subscribed subreddits for ${message.guild.name}:`,
                             `${subredditNames.join('\n')}`
                         )
+                        .addField(`Types:`, `${subredditTypes.join('\n')}`)
                         .setTimestamp();
 
                     message.channel.send(embed);
                 }
             });
+            break;
+
+        case 'sethot':
+            if (args.length !== 1) {
+                return message.channel.send(
+                    'Please give a subreddit to switch to sorting by hot. Example: `!!sethot funny`'
+                );
+            }
+            break;
+
+        case 'setnew':
             break;
 
         case 'admin':
@@ -247,7 +261,7 @@ function addCommandHandler(args, message: Discord.Message) {
                         return rfc
                             .getNewSubredditPostsBySubredditName(args[0])
                             .then((posts) => {
-                                // TODO: Make sure the subreddit doesn't already exist
+                                // TODO: this seems to not be working??? (the check, this can return even with a bad reddit name)
                                 // Shove the last 50 posts into the DB entry for the subreddit
                                 let urls = posts.map((entry) => {
                                     return entry.url;
@@ -285,6 +299,27 @@ function addCommandHandler(args, message: Discord.Message) {
     });
 }
 
+function setHotHandler(args, message: Discord.Message) {
+    return middleware.checkRegistration(message.guild.id).then((results) => {
+        if (results == true) {
+            return middleware.checkIfSubredditExists(message.guild.id, args[0]).then((response) => {
+                if (response.length < 1) {
+                    message.channel.send(`It looks like you are are not subscribed to ${args[0]}.`);
+                } else {
+                    return middleware.setSubredditType(message.guild.id, args[0], 'hot')
+                }
+            });
+        } else {
+            // Server needs to register
+            message.channel.send(
+                'You need to initialize your server with the `register` command first.'
+            );
+        }
+    });
+}
+
+function setNewHandler(args, message: Discord.Message) {}
+
 // This is where the fetchClient will use the middleware to refresh data/etc.
 function intervalFunc() {
     logger.info('Starting reddit check interval...');
@@ -298,6 +333,7 @@ function intervalFunc() {
             return logger.debug(`Database returned no entries...`);
         }
         entries.forEach((entry) => {
+            logger.info(`Starting checks for ${entry.discordID}`);
             return middleware.getServerRedditData(entry.discordID).then((results) => {
                 if (results.length < 1) {
                     return logger.debug(`server ${entry.discordID} has subbreddits to check`);
@@ -316,10 +352,15 @@ function intervalFunc() {
 
 // TODO: This might be an awful way of going about this
 function subredditNewPostsCheck(discord, reddit) {
+    logger.info(`Checking subreddit ${reddit.name} for server ${discord.discordID}`);
     let lastSeenPosts = reddit.posts;
 
     // Set up a chain of promises to keep this synchronous
     let promiseChain = Promise.resolve();
+
+    if (reddit.updateType == 'hot') {
+    } else {
+    }
 
     return rfc
         .getNewSubredditPostsBySubredditName(reddit.name)

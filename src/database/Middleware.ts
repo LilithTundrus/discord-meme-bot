@@ -128,4 +128,8 @@ export default class Middleware {
             return results;
         });
     }
+
+    setSubredditType(discordID, redditName, type: string) {
+        return this.db.setSubredditType(discordID, redditName, type);
+    }
 }

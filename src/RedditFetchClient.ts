@@ -22,10 +22,10 @@ export default class RedditFetchClient {
         this.mw = middleWare;
     }
 
-    test() {
+    getHotPostsBySubredditName(subRedditName) {
         // Printing a list of the titles on the front page
-        return this.wrapper.getHot().then((results) => {
-            return results[0].url;
+        return this.wrapper.getHot(subRedditName).then((posts) => {
+            return posts;
         });
     }
 

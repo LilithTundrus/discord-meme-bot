@@ -115,6 +115,7 @@ export default class Database {
                         channelID: channelID,
                         name: subRedditName,
                         posts: initialData,
+                        updateType: 'hot'
                     };
                     return dbo.collection('reddits').insertOne(redditData);
                 })
@@ -133,6 +134,27 @@ export default class Database {
                 .toArray()
                 .then((results) => {
                     return results;
+                });
+        });
+    }
+
+    setSubredditType(discordID, subRedditName, type: string) {
+        logger.info(`Attempting to update reddit info ${subRedditName} for server ${discordID}`);
+        return this.client.connect().then((mc) => {
+            let dbo = mc.db(this.dbName);
+            return dbo
+                .collection('reddits')
+                .find({ discordID: discordID })
+                .toArray()
+                .then((results) => {
+                    let object = results.find((entry) => {
+                        return entry.name == subRedditName;
+                    });
+                    dbo.collection('reddits')
+                        .updateOne({ _id: object._id }, { $set: { updateType: type } })
+                        .then(() => {
+                            logger.info(`Updated ${subRedditName} to type: ${type}`);
+                        });
                 });
         });
     }
