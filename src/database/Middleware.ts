@@ -76,6 +76,7 @@ export default class Middleware {
                 }
             })
             .catch((err) => {
+                // TODO: FIX
                 console.log(err);
                 return err;
             });

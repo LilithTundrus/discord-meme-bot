@@ -3,6 +3,7 @@
 
 // Custom code imports
 import { botToken, botPrefix, redditFetchConfig, dbInfo, adminID } from './config';
+import * as messages from './messages';
 import RedditFetchClient from './RedditFetchClient';
 import Database from './database/Database';
 import Middleware from './database/Middleware';
@@ -83,7 +84,7 @@ client.on('message', async (message) => {
     // Make sure message is NOT a DM, this is a server-only bot
     if (message.guild == null) {
         logger.info(`DM Message from ${message.author.id}: ${message.content}`);
-        return message.reply('Sorry, please use this bot in a valid Discord server. Thanks!');
+        return message.reply(messages.useAServer);
     }
 
     logger.info(`Message event from ${message.author.id}: ${message.content}`);
@@ -93,19 +94,13 @@ client.on('message', async (message) => {
             middleware.registerDiscordServer(message.guild.id).then((results) => {
                 if (results == true) {
                     // Registration was completed
-                    let msg =
-                        'Got it, you now have an active discord ID, you can use the `!!add` command to add a subreddits to a channel.';
-                    message.channel.send(msg);
+                    message.channel.send(messages.successfulRegister);
                 } else if (results == false) {
                     // Server is already registered, let the user know
-                    let msg =
-                        'You are already set up with an active Discord ID. Use the `!!add` command to add subreddits to this channel.';
-                    message.channel.send(msg);
+                    message.channel.send(messages.alreadyRegistered);
                 } else {
                     // An error was returned
-                    let msg =
-                        'Sorry, something went wrong. Try again later. I will DM the bot admin and let them know something went wrong.';
-                    message.channel.send(msg);
+                    message.channel.send(messages.registrationError);
                     client.users.fetch(adminID).then((user) => {
                         user.send(`Error on registration: ${results}`);
                     });
@@ -197,6 +192,7 @@ client.on('message', async (message) => {
                     'Please give a subreddit to switch to sorting by hot. Example: `!!sethot funny`'
                 );
             }
+            return setHotHandler(args, message);
             break;
 
         case 'setnew':
@@ -306,7 +302,7 @@ function setHotHandler(args, message: Discord.Message) {
                 if (response.length < 1) {
                     message.channel.send(`It looks like you are are not subscribed to ${args[0]}.`);
                 } else {
-                    return middleware.setSubredditType(message.guild.id, args[0], 'hot')
+                    return middleware.setSubredditType(message.guild.id, args[0], 'hot');
                 }
             });
         } else {
