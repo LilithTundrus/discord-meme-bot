@@ -81,7 +81,6 @@ export default class Database {
         return this.client.connect().then((mc) => {
             let initialData = {
                 discordID: discordID,
-                channelID: '',
                 upvoteThreshold: 50,
             };
             let dbo = mc.db(this.dbName);
@@ -109,7 +108,7 @@ export default class Database {
             return dbo
                 .collection('discords')
                 .findOne({ discordID: discordID })
-                .then((results) => {
+                .then(() => {
                     let redditData = {
                         discordID: discordID,
                         channelID: channelID,
