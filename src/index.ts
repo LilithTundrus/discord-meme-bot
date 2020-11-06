@@ -31,6 +31,7 @@ const prefix = botPrefix;
 // TODO: Fix spelling and grammar (subReddit vs. subreddit)
 // TODO: Add !!yoink to have the bot send a better info about the last post posted
 // TODO:: add an option to switch from hot or new for getting new posts
+// TODO: Get the help message to be better
 
 // Initiate the wrapper for getting reddit content here
 const snoowrapInstance = new snoowrap.default({
@@ -116,12 +117,12 @@ client.on('message', async (message) => {
                     // Server is registered
                     return middleware.removeAllDiscordInfo(message.guild.id).then(() => {
                         return middleware.removeAllRedditInfo(message.guild.id).then(() => {
-                            message.channel.send('This server has been unregistered with the bot!');
+                            message.channel.send(messages.successfulUnregister);
                         });
                     });
                 } else {
                     // Server isn't registered
-                    message.channel.send('Sorry, it looks like this server is not registered.');
+                    message.channel.send(messages.alreadyUnregistered);
                 }
             });
             break;
@@ -133,18 +134,14 @@ client.on('message', async (message) => {
 
         case 'add':
             if (args.length !== 1) {
-                return message.channel.send(
-                    'Please give a subreddit to subscribe to with the `!!add` command\nExample: `!!add funny`'
-                );
+                return message.channel.send(messages.addArgsNeeded);
             }
             return addCommandHandler(args, message);
             break;
 
         case 'remove':
             if (args.length !== 1) {
-                return message.channel.send(
-                    'Please give a subreddit to unsubscribe to with the `!!remove` command\nExample: `!!remove funny`'
-                );
+                return message.channel.send(messages.removeArgsNeeded);
             }
             return middleware.removeServerRedditInfo(message.guild.id, args[0]).then(() => {
                 return message.channel.send(
@@ -158,9 +155,7 @@ client.on('message', async (message) => {
             // Show the user the current subreddits they're subscribed to
             return middleware.getServerRedditData(message.guild.id).then((results) => {
                 if (results.length < 1) {
-                    message.channel.send(
-                        'It looks like this server had no subscribed subreddits. Add some with the `!!add` command!'
-                    );
+                    message.channel.send(messages.showSubsNoSubscriptions);
                 } else {
                     let subredditNames = results.map((entry) => {
                         return entry.name;
@@ -188,9 +183,7 @@ client.on('message', async (message) => {
 
         case 'sethot':
             if (args.length !== 1) {
-                return message.channel.send(
-                    'Please give a subreddit to switch to sorting by hot. Example: `!!sethot funny`'
-                );
+                return message.channel.send(messages.hotArgsNeeded);
             }
             return setHotHandler(args, message);
             break;
@@ -288,9 +281,7 @@ function addCommandHandler(args, message: Discord.Message) {
             // Server is registered, now check for a defined chat for the bot
         } else {
             // Server needs to register
-            message.channel.send(
-                'You need to initialize your server with the `register` command first.'
-            );
+            message.channel.send(messages.addArgsNeeded);
         }
     });
 }
