@@ -30,7 +30,7 @@ const alreadyUnregistered = 'Sorry, it looks like this server is not registered.
 const addArgsNeeded =
     'Please give a subreddit to subscribe to with the `!!add` command\nExample: `!!add funny`';
 
-const addNeedToRegister = 'You need to initialize your server with the `register` command first.';
+const needToRegister = 'You need to initialize your server with the `register` command first.';
 
 const removeArgsNeeded =
     'Please give a subreddit to unsubscribe to with the `!!remove` command\nExample: `!!remove funny`';
@@ -41,6 +41,9 @@ const showSubsNoSubscriptions =
 const hotArgsNeeded =
     'Please give a subreddit to switch to sorting by hot. Example: `!!sethot funny`';
 
+const newArgsNeeded =
+    'Please give a subreddit to switch to sorting by hot. Example: `!!setnew funny`';
+
 export {
     useAServer,
     successfulRegister,
@@ -49,8 +52,9 @@ export {
     successfulUnregister,
     alreadyUnregistered,
     addArgsNeeded,
-    addNeedToRegister,
+    needToRegister,
     removeArgsNeeded,
     showSubsNoSubscriptions,
     hotArgsNeeded,
+    newArgsNeeded,
 };

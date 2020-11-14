@@ -92,7 +92,7 @@ client.on('message', async (message) => {
 
     switch (command) {
         case 'register':
-            middleware.registerDiscordServer(message.guild.id).then((results) => {
+            return middleware.registerDiscordServer(message.guild.id).then((results) => {
                 if (results == true) {
                     // Registration was completed
                     message.channel.send(messages.successfulRegister);
@@ -108,7 +108,6 @@ client.on('message', async (message) => {
                     logger.error(results);
                 }
             });
-            break;
 
         case 'unregister':
             // Check if the discord server is registered at all first
@@ -125,19 +124,16 @@ client.on('message', async (message) => {
                     message.channel.send(messages.alreadyUnregistered);
                 }
             });
-            break;
 
         case 'help':
             // Display the help message
-            message.channel.send(embeds.helpEmbed);
-            break;
+            return message.channel.send(embeds.helpEmbed);
 
         case 'add':
             if (args.length !== 1) {
                 return message.channel.send(messages.addArgsNeeded);
             }
             return addCommandHandler(args, message);
-            break;
 
         case 'remove':
             if (args.length !== 1) {
@@ -185,11 +181,13 @@ client.on('message', async (message) => {
             if (args.length !== 1) {
                 return message.channel.send(messages.hotArgsNeeded);
             }
-            return setHotHandler(args, message);
-            break;
+            return setUpdateType(args, message, 'hot');
 
         case 'setnew':
-            break;
+            if (args.length !== 1) {
+                return message.channel.send(messages.newArgsNeeded);
+            }
+            return setUpdateType(args, message, 'new');
 
         case 'admin':
             // Check for admin ID
@@ -256,7 +254,7 @@ function addCommandHandler(args, message: Discord.Message) {
                                     return entry.url;
                                 });
                                 message.channel.send(
-                                    `Ok, I added \`${args[0]}\`, you'll get new posts from there.`
+                                    `Ok, I added \`${args[0]}\`, you'll get new posts from there. Default update type is \`hot\`.`
                                 );
                                 return middleware.addServerRedditInfo(
                                     message.guild.id,
@@ -278,32 +276,30 @@ function addCommandHandler(args, message: Discord.Message) {
                     );
                 }
             });
-            // Server is registered, now check for a defined chat for the bot
         } else {
             // Server needs to register
-            message.channel.send(messages.addArgsNeeded);
+            message.channel.send(messages.needToRegister);
         }
     });
 }
 
-function setHotHandler(args, message: Discord.Message) {
+function setUpdateType(args, message: Discord.Message, updateType) {
     return middleware.checkRegistration(message.guild.id).then((results) => {
         if (results == true) {
             return middleware.checkIfSubredditExists(message.guild.id, args[0]).then((response) => {
                 if (response.length < 1) {
                     message.channel.send(`It looks like you are are not subscribed to ${args[0]}.`);
                 } else {
-                    return middleware.setSubredditType(message.guild.id, args[0], 'hot');
+                    message.channel.send(`Update type set to \`${args[0]}\`.`);
+                    return middleware.setSubredditType(message.guild.id, args[0], updateType);
                 }
             });
         } else {
             // Server needs to register
-            message.channel.send(messages.addNeedToRegister);
+            message.channel.send(messages.needToRegister);
         }
     });
 }
-
-function setNewHandler(args, message: Discord.Message) {}
 
 // This is where the fetchClient will use the middleware to refresh data/etc.
 function intervalFunc() {
@@ -324,6 +320,7 @@ function intervalFunc() {
                     return logger.debug(`server ${entry.discordID} has subbreddits to check`);
                 } else {
                     results.forEach((reddit) => {
+                        // TODO: Do a new or hot check here and call the correct function
                         promiseChain = promiseChain.then(() => {
                             return subredditNewPostsCheck(entry, reddit);
                         });
@@ -343,41 +340,45 @@ function subredditNewPostsCheck(discord, reddit) {
     // Set up a chain of promises to keep this synchronous
     let promiseChain = Promise.resolve();
 
+    // TODO: This needs to be worked on!!!
     if (reddit.updateType == 'hot') {
     } else {
-    }
-
-    return rfc
-        .getNewSubredditPostsBySubredditName(reddit.name)
-        .then((posts) => {
-            // Comparing the URLs is the safest way to compare new vs. old data
-            let urls = posts.map((entry) => {
-                return entry.url;
-            });
-
-            posts.forEach((post) => {
-                promiseChain = promiseChain.then(() => {
-                    if (lastSeenPosts.includes(post.url)) {
-                        return;
-                    } else {
-                        logger.debug(`NEW POST ${post.url}`);
-                        // Construct the embed message:
-
-                        // Results is defined as any because the Discord.js typings are wrong, this works fine
-                        return client.channels.fetch(reddit.channelID).then((results: any) => {
-                            let msg = `New post from ${post.subreddit_name_prefixed} with ${post.ups} upvotes: ${post.url}`;
-                            return results.send(msg);
-                        });
-                    }
+        return rfc
+            .getNewSubredditPostsBySubredditName(reddit.name)
+            .then((posts) => {
+                // Comparing the URLs is the safest way to compare new vs. old data
+                let urls = posts.map((entry) => {
+                    return entry.url;
                 });
-            });
 
-            // After completing the chain of promises, update the database info for the subreddit
-            return promiseChain.then(() => {
-                return middleware.updateServerRedditInfoCache(discord.discordID, reddit.name, urls);
+                posts.forEach((post) => {
+                    promiseChain = promiseChain.then(() => {
+                        if (lastSeenPosts.includes(post.url)) {
+                            return;
+                        } else {
+                            logger.debug(`NEW POST ${post.url}`);
+                            // Construct the embed message:
+
+                            // Results is defined as any because the Discord.js typings are wrong, this works fine
+                            return client.channels.fetch(reddit.channelID).then((results: any) => {
+                                let msg = `New post from ${post.subreddit_name_prefixed} with ${post.ups} upvotes: ${post.url}`;
+                                return results.send(msg);
+                            });
+                        }
+                    });
+                });
+
+                // After completing the chain of promises, update the database info for the subreddit
+                return promiseChain.then(() => {
+                    return middleware.updateServerRedditInfoCache(
+                        discord.discordID,
+                        reddit.name,
+                        urls
+                    );
+                });
+            })
+            .then(() => {
+                logger.info(`Done with ${reddit.name} for ${discord.discordID}`);
             });
-        })
-        .then(() => {
-            logger.info(`Done with ${reddit.name} for ${discord.discordID}`);
-        });
+    }
 }
