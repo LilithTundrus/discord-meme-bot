@@ -320,10 +320,13 @@ function intervalFunc() {
                     return logger.debug(`server ${entry.discordID} has subbreddits to check`);
                 } else {
                     results.forEach((reddit) => {
-                        // TODO: Do a new or hot check here and call the correct function
-                        promiseChain = promiseChain.then(() => {
-                            return subredditNewPostsCheck(entry, reddit);
-                        });
+                        if (reddit.updateType == 'hot') {
+                            return subredditHotPostsCheck(entry, reddit);
+                        } else {
+                            promiseChain = promiseChain.then(() => {
+                                return subredditNewPostsCheck(entry, reddit);
+                            });
+                        }
                     });
                 }
             });
@@ -340,45 +343,79 @@ function subredditNewPostsCheck(discord, reddit) {
     // Set up a chain of promises to keep this synchronous
     let promiseChain = Promise.resolve();
 
-    // TODO: This needs to be worked on!!!
-    if (reddit.updateType == 'hot') {
-    } else {
-        return rfc
-            .getNewSubredditPostsBySubredditName(reddit.name)
-            .then((posts) => {
-                // Comparing the URLs is the safest way to compare new vs. old data
-                let urls = posts.map((entry) => {
-                    return entry.url;
-                });
-
-                posts.forEach((post) => {
-                    promiseChain = promiseChain.then(() => {
-                        if (lastSeenPosts.includes(post.url)) {
-                            return;
-                        } else {
-                            logger.debug(`NEW POST ${post.url}`);
-                            // Construct the embed message:
-
-                            // Results is defined as any because the Discord.js typings are wrong, this works fine
-                            return client.channels.fetch(reddit.channelID).then((results: any) => {
-                                let msg = `New post from ${post.subreddit_name_prefixed} with ${post.ups} upvotes: ${post.url}`;
-                                return results.send(msg);
-                            });
-                        }
-                    });
-                });
-
-                // After completing the chain of promises, update the database info for the subreddit
-                return promiseChain.then(() => {
-                    return middleware.updateServerRedditInfoCache(
-                        discord.discordID,
-                        reddit.name,
-                        urls
-                    );
-                });
-            })
-            .then(() => {
-                logger.info(`Done with ${reddit.name} for ${discord.discordID}`);
+    return rfc
+        .getNewSubredditPostsBySubredditName(reddit.name)
+        .then((posts) => {
+            // Comparing the URLs is the safest way to compare new vs. old data
+            let urls = posts.map((entry) => {
+                return entry.url;
             });
-    }
+
+            posts.forEach((post) => {
+                promiseChain = promiseChain.then(() => {
+                    if (lastSeenPosts.includes(post.url)) {
+                        return;
+                    } else {
+                        logger.debug(`NEW POST ${post.url}`);
+                        // Construct the embed message:
+
+                        // Results is defined as any because the Discord.js typings are wrong, this works fine
+                        return client.channels.fetch(reddit.channelID).then((results: any) => {
+                            let msg = `New post from ${post.subreddit_name_prefixed} with ${post.ups} upvotes: ${post.url}`;
+                            return results.send(msg);
+                        });
+                    }
+                });
+            });
+
+            // After completing the chain of promises, update the database info for the subreddit
+            return promiseChain.then(() => {
+                return middleware.updateServerRedditInfoCache(discord.discordID, reddit.name, urls);
+            });
+        })
+        .then(() => {
+            logger.info(`Done with ${reddit.name} for ${discord.discordID}`);
+        });
+}
+
+function subredditHotPostsCheck(discord, reddit) {
+    logger.info(`Checking subreddit ${reddit.name} for server ${discord.discordID}`);
+    let lastSeenPosts = reddit.posts;
+
+    // Set up a chain of promises to keep this synchronous
+    let promiseChain = Promise.resolve();
+
+    return rfc
+        .getHotPostsBySubredditName(reddit.name)
+        .then((posts) => {
+            // Comparing the URLs is the safest way to compare new vs. old data
+            let urls = posts.map((entry) => {
+                return entry.url;
+            });
+
+            posts.forEach((post) => {
+                promiseChain = promiseChain.then(() => {
+                    if (lastSeenPosts.includes(post.url)) {
+                        return;
+                    } else {
+                        logger.debug(`NEW POST ${post.url}`);
+                        // Construct the embed message:
+
+                        // Results is defined as any because the Discord.js typings are wrong, this works fine
+                        return client.channels.fetch(reddit.channelID).then((results: any) => {
+                            let msg = `New post from ${post.subreddit_name_prefixed} with ${post.ups} upvotes: ${post.url}`;
+                            return results.send(msg);
+                        });
+                    }
+                });
+            });
+
+            // After completing the chain of promises, update the database info for the subreddit
+            return promiseChain.then(() => {
+                return middleware.updateServerRedditInfoCache(discord.discordID, reddit.name, urls);
+            });
+        })
+        .then(() => {
+            logger.info(`Done with ${reddit.name} for ${discord.discordID}`);
+        });
 }
