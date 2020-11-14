@@ -298,9 +298,7 @@ function setHotHandler(args, message: Discord.Message) {
             });
         } else {
             // Server needs to register
-            message.channel.send(
-                'You need to initialize your server with the `register` command first.'
-            );
+            message.channel.send(messages.addNeedToRegister);
         }
     });
 }
@@ -374,7 +372,7 @@ function subredditNewPostsCheck(discord, reddit) {
                 });
             });
 
-            // After (hopefully) completing the chain of promises, update the database info for the subreddit
+            // After completing the chain of promises, update the database info for the subreddit
             return promiseChain.then(() => {
                 return middleware.updateServerRedditInfoCache(discord.discordID, reddit.name, urls);
             });
